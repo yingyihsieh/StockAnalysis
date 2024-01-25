@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>charts</title>
+    <link href="{{ url_for('static', path='plugins/bootstrap-3.4.1/css/bootstrap.css') }}" rel="stylesheet">
+</head>
+<body>
+<div class="container-fluid">
+    <div id="chart"  style="width:960px; height:540px;">
+
+    </div>
+
+</div>
+
+<script src="{{ url_for('static', path='js/jquery-3.6.0.min.js') }}"></script>
+<script src="{{ url_for('static', path='plugins/bootstrap-3.4.1/js/bootstrap.min.js') }}"></script>
+<script type="text/javascript" src="https://assets.pyecharts.org/assets/echarts.min.js"></script>
+
+<script>
+    var cur_chart = echarts.init(document.getElementById('chart'), 'white', {renderer: 'canvas'});
+
+    $(
+        function () {
+            fetchChart();
+        }
+    );
+
+    function fetchChart() {
+
+        $.ajax({
+            type: "GET",
+            url: "/statistic/recruitment",
+            dataType: 'json',
+            success: function (result) {
+                cur_chart.setOption(JSON.parse(result));
+            }
+        });
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,142 @@
+{% extends 'layout.html' %}
+
+
+{% block content %}
+
+<div class="container">
+    <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+        <div class="panel panel-default">
+            <div class="panel-heading" role="tab" id="heading-{{group.0.uid}}">
+                <h4 class="panel-title">
+                    <a role="button" data-toggle="collapse" data-parent="#accordion" href="#{{group.0.uid}}"
+                       aria-expanded="true" aria-controls="{{group.0.uid}}">
+                        {{group.0.title}}
+                    </a>
+                </h4>
+            </div>
+            <div id="{{group.0.uid}}" class="panel-collapse collapse in" role="tabpanel"
+                 aria-labelledby="heading-{{group.0.uid}}">
+                <div class="panel-body">
+                    <table  class="table">
+                        <thead>
+                        <tr>
+                            <th>公司名稱</th>
+                            <th>股票代號</th>
+                            <th>使用操作</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for l in group.0.detail_docs %}
+                        <tr>
+                            <th scope="row">{{l.title}}</th>
+                            <td>{{l.id}}</td>
+                            <td>
+                                <input pk="list-{{l.id}}" class="btn-xs btn-danger del-op" type="button" value="刪除">
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% for g in group[1:] %}
+        <div class="panel panel-default">
+            <div class="panel-heading" role="tab" id="heading-{{g.uid}}">
+                <h4 class="panel-title">
+                    <a class="collapsed" role="button" data-toggle="collapse" data-parent="#accordion"
+                       href="#{{g.uid}}" aria-expanded="false" aria-controls="{{g.uid}}">
+                        {{g.title}}
+                    </a>
+                </h4>
+            </div>
+            <div id="{{g.uid}}" class="panel-collapse collapse" role="tabpanel" aria-labelledby="heading-{{g.uid}}">
+                <div class="panel-body">
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th>公司名稱</th>
+                            <th>股票代號</th>
+                            <th>使用操作</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for l in g.detail_docs %}
+                        <tr>
+                            <th scope="row">{{l.title}}</th>
+                            <td>{{l.id}}</td>
+                            <td>
+                                <input pk="list-{{l.id}}" class="btn-xs btn-danger del-op" type="button" value="刪除">
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+
+
+
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+
+    </div>
+</div>
+
+<!-- delete model -->
+<div class="modal fade" id="opModal" tabindex="-1" role="dialog" aria-labelledby="opModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="alert alert-danger alert-dismissible fade in" role="alert">
+            <h4>公司刪除</h4>
+            <p style="font-size: 20px; color: red; margin: 10px 0;">刪除操作將移除數據不可復原,確認是否刪除</p>
+            <p>
+                <button id="confirmBtn" type="button" class="btn btn-danger">確 認</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal">取 消</button>
+            </p>
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}
+
+
+{% block js %}
+<script>
+    var target;
+    $(function () {
+        deletListEvent()
+        bindConfirmDeleteEvent()
+    })
+    function deletListEvent() {
+        $(".del-op").click(function () {
+            $("#opModal").modal("show");
+            DELETE_ID = $(this).attr("pk");
+        })
+    }
+
+    function bindConfirmDeleteEvent() {
+        $("#confirmBtn").click(function () {
+            $.ajax({
+                url: '/api/groupList/' + DELETE_ID,
+                type: 'delete',
+                dataType: "JSON",
+                success: function (resp) {
+                    if (!resp.code) {
+                        alert("刪除失敗,請重新嘗試")
+                    } else {
+                        alert("刪除成功,重新載入頁面")
+                        $("#opModal").modal("hide")
+                        window.location.reload();
+                    }
+                },
+                error: function (jqXHR, textStatus, errorThrown) {
+                    /*弹出jqXHR对象的信息*/
+                    alert("服務出錯");
+                    /*弹出其他两个参数的信息*/
+                }
+            })
+        })
+    }
+</script>
+{% endblock %}

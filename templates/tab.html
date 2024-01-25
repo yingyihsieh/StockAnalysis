@@ -1,0 +1,129 @@
+{% extends 'layout.html' %}
+
+{% block pagetitle %}
+<title>觀察清單</title>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    {% if groups %}
+    <ul id="myTabs" class="nav nav-tabs" role="tablist">
+        <li role="presentation" class="active" uid="{{groups[0].uid}}">
+            <a href="#{{groups[0].uid}}" id="tab-group{{groups[0].uid}}" role="tab" data-toggle="tab" aria-controls="{{groups[0].uid}}" aria-expanded="true">
+                {{groups[0].title}}
+            </a>
+        </li>
+
+        {% for g in groups[1:] %}
+        <li role="presentation" uid="{{groups[0].uid}}">
+            <a href="#{{g.uid}}" id="tab-group{{g.uid}}" role="tab" data-toggle="tab" aria-controls="{{g.uid}}" aria-expanded="true">
+                {{g.title}}
+            </a>
+        </li>
+        {% endfor %}
+
+        <li role="presentation" uid="nfsf_tab">
+            <a href="#nfsf_tab" id="tab-group-nfsf_tab" role="tab" data-toggle="tab" aria-controls="nfsf_tab" aria-expanded="true">
+                國安基金
+            </a>
+        </li>
+
+        <li role="presentation" uid="cnsf_tab">
+            <a href="#cnsf_tab" id="tab-group-cnsf_tab" role="tab" data-toggle="tab" aria-controls="cnsf_tab" aria-expanded="true">
+                平準基金
+            </a>
+        </li>
+    </ul>
+    <div id="myTabContent" class="tab-content">
+        <div role="tabpanel" class="tab-pane fade in active" id="{{groups[0].uid}}" aria-labelledby="tab-group{{groups[0].uid}}">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>公司</th>
+                        <th>股號</th>
+                        <th>標題</th>
+                        <th>時間</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for news in groups[0].news_detail %}
+                    <tr>
+                        <th scope="row">{{news.stock_nickname}}</th>
+                        <td>{{news.stock_id}}</td>
+                        <td><a target="_blank" href="{{news.link}}">{{news.title}}</a></td>
+                        <td>{{news.created}}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% for g in groups[1:] %}
+        <div role="tabpanel" class="tab-pane fade" id="{{g.uid}}" aria-labelledby="tab-group{{g.uid}}">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>公司</th>
+                        <th>股號</th>
+                        <th>標題</th>
+                        <th>時間</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for news in g.news_detail %}
+                    <tr>
+                        <th scope="row">{{news.stock_nickname}}</th>
+                        <td>{{news.stock_id}}</td>
+                        <td><a target="_blank" href="{{news.link}}">{{news.title}}</a></td>
+                        <td>{{news.created}}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endfor %}
+
+        <div role="tabpanel" class="tab-pane fade" id="nfsf_tab" aria-labelledby="tab-group-nfsf_tab">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>標題</th>
+                        <th>時間</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for news in nfsf_set %}
+                    <tr>
+                        <th scope="row"><a target="_blank" href="{{news.link}}">{{news.title}}</a></th>
+                        <td>{{news.created}}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div role="tabpanel" class="tab-pane fade" id="cnsf_tab" aria-labelledby="tab-group-cnsf_tab">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>標題</th>
+                        <th>時間</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for news in cnsf_set %}
+                    <tr>
+                        <th scope="row"><a target="_blank" href="{{news.link}}">{{news.title}}</a></th>
+                        <td>{{news.created}}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+    {% else %}
+    {% endif %}
+</div>
+{% endblock %}
+

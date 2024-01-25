@@ -1,0 +1,117 @@
+{% extends 'layout.html' %}
+
+
+{% block content %}
+<div class="container" style="margin-left: 10px">
+
+    <!-- Table -->
+    <table class="table table-bordered">
+        <thead>
+        <tr>
+            {% for key in keys %}
+            <th>{{key}}</th>
+            {% endfor %}
+        </tr>
+        </thead>
+        <tbody>
+        {% for obj in data%}
+        <tr>
+            <th scope="row">{{formatter(obj.date)}}</th>
+            <td>{{obj['US10Y-Y']}}</td>
+            <td>{{obj['US10Y-Y△%']}}</td>
+            <td>{{obj['USIND']}}</td>
+            <td>{{obj['USIND△%']}}</td>
+            <td>{{obj['DJIA']}}</td>
+            <td>{{obj['DJIA△%']}}</td>
+            <td>{{obj['NASDAQ']}}</td>
+            <td>{{obj['NASDAQ△%']}}</td>
+            <td>{{obj['SOX']}}</td>
+            <td>{{obj['SOX△%']}}</td>
+            <td>{{obj['FI-NET']}}</td>
+            <td>{{obj['FI-Future-OI']}}</td>
+            <td>{{obj['FI-Option-OI']}}</td>
+            <td>{{obj['PC-R']}}</td>
+            <td>{{obj['US/NT']}}</td>
+            <td>{{obj['Top5Position']}}</td>
+            <td>{{obj['Top10Position']}}</td>
+            <td>{{obj['BullBearIND-R']}}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+
+    <div style="text-align: center">
+        <ul class="pagination">
+
+            {% if previous %}
+            <li>
+                <a href="{{ url_for('get_world')}}?page={{cur_page - 1}}"
+                   aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+            {% else %}
+            <li class="disabled">
+                <a href="#" aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+            {% endif %}
+
+            {% if total_page <= 5 %}
+            {% for i in range(1, total_page+1) %}
+            {% if cur_page == i %}
+            <li class="active"><a href="#">{{i}}</a></li>
+            {% else %}
+            <li><a href="{{ url_for('get_world')}}{{'?page='}}{{i}}">{{i}}</a></li>
+            {% endif %}
+            {% endfor %}
+            {% else %}
+            {% if cur_page >= 3 and total_page - cur_page >= 2 %}
+            <li><a href="{{ url_for('get_world')}}{{'?page='}}{{cur_page-2}}">{{cur_page-2}}</a>
+            </li>
+            <li><a href="{{ url_for('get_world')}}{{'?page='}}{{cur_page-1}}">{{cur_page-1}}</a>
+            </li>
+            <li class="active"><a href="#">{{cur_page}}</a></li>
+            <li><a href="{{ url_for('get_world')}}{{'?page='}}{{cur_page+1}}">{{cur_page+1}}</a>
+            </li>
+            <li><a href="{{ url_for('get_world')}}{{'?page='}}{{cur_page+2}}">{{cur_page+2}}</a>
+            </li>
+            {% elif cur_page < 3 %}
+            {% for i in range(1, 6) %}
+            {% if cur_page == i %}
+            <li class="active"><a href="#">{{i}}</a></li>
+            {% else %}
+            <li><a href="{{ url_for('get_world')}}{{'?page='}}{{i}}">{{i}}</a></li>
+            {% endif %}
+            {% endfor %}
+            {% elif total_page - cur_page < 2 %}
+            {% for i in range(total_page-4, total_page+1) %}
+            {% if data.page == i %}
+            <li class="active"><a href="#">{{i}}</a></li>
+            {% else %}
+            <li><a href="{{ url_for('get_world')}}{{'?page='}}{{i}}">{{i}}</a></li>
+            {% endif %}
+            {% endfor %}
+            {% endif %}
+            {% endif %}
+            {% if next %}
+            <li>
+                <a href="{{ url_for('get_world')}}?page={{cur_page + 1}}"
+                   aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+            {% else %}
+            <li class="disabled">
+                <a href="#" aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </div>
+</div>
+{% endblock %}
+

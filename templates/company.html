@@ -1,0 +1,782 @@
+{% extends 'layout.html' %}
+
+{% block pagetitle %}
+    <title>文穎數據分析系統-公司列表</title>
+{% endblock %}
+
+{% block search %}
+    <form class="navbar-form navbar-left">
+        <div class="form-group">
+            <input type="text" class="form-control" placeholder="請輸入代號" name="stock_id">
+        </div>
+        <button type="submit" class="btn btn-default">搜 尋</button>
+    </form>
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <div style="margin-bottom: 10px">
+            <a id="addCompany" class="btn btn-success" data-toggle="modal" data-target="#addModal">
+                <span class="glyphicon glyphicon-plus-sign" aria-hidden="true"></span>
+                添 加
+            </a>
+        </div>
+
+        <div class="panel panel-default">
+            <!-- Default panel contents -->
+
+            <div class="panel-heading">
+                <span class="glyphicon glyphicon-list" aria-hidden="true"></span>
+                列表1
+            </div>
+
+            <!-- Table -->
+            <table class="table table-bordered">
+                <thead>
+                <tr>
+                    <th>名稱</th>
+                    <th>代號</th>
+                    <th>人數</th>
+                    <th>操作</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for obj in data %}
+                    <tr>
+                        <th scope="row">{{ obj.nickname }}</th>
+                        <td>{{ obj.stock_id }}</td>
+                        <td>{{ obj.employees }}</td>
+
+                        <td>
+                            <input pk="{{ obj.stock_id }}" name="{{ obj.nickname }}" class="btn-xs btn-warning math-btn"
+                                   type="button" value="計算">
+                            <input pk="{{ obj.stock_id }}" name="{{ obj.nickname }}"
+                                   class="btn-xs btn-info noteList-btn"
+                                   type="button" value="查看筆記">
+                            <input pk="{{ obj.stock_id }}" class="btn-xs btn-primary editLoc" type="button"
+                                   value="編輯">
+                            <input pk="{{ obj.stock_id }}" class="btn-xs btn-danger delLoc" type="button" value="刪除">
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+
+        <div style="text-align: center">
+            <ul class="pagination">
+                {% if previous %}
+                    <li>
+                        <a href="{{ url_for('get_company') }}?page={{ cur_page - 1 }}&stock_id={{ sid }}"
+                           aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="disabled">
+                        <a href="#" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                {% endif %}
+
+                {% if total_page <= 5 %}
+                    {% for i in range(1, total_page + 1) %}
+                        {% if cur_page == i %}
+                            <li class="active"><a href="#">{{ i }}</a></li>
+                        {% else %}
+                            <li><a href="
+                                    {{ url_for('get_company') }}{{ '?page=' }}{{ i }}&stock_id={{ sid }}">{{ i }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                {% else %}
+                    {% if cur_page >= 3 and total_page - cur_page >= 2 %}
+                        <li><a href="
+
+
+                                {{ url_for('get_company') }}{{ '?page=' }}{{ cur_page - 2 }}&stock_id={{ sid }}">{{ cur_page-2 }}</a>
+                        </li>
+                        <li><a href="
+
+
+                                {{ url_for('get_company') }}{{ '?page=' }}{{ cur_page - 1 }}&stock_id={{ sid }}">{{ cur_page-1 }}</a>
+                        </li>
+                        <li class="active"><a href="#">{{ cur_page }}</a></li>
+                        <li><a href="
+
+
+                                {{ url_for('get_company') }}{{ '?page=' }}{{ cur_page + 1 }}&stock_id={{ sid }}">{{ cur_page + 1 }}</a>
+                        </li>
+                        <li><a href="
+
+
+                                {{ url_for('get_company') }}{{ '?page=' }}{{ cur_page + 2 }}&stock_id={{ sid }}">{{ cur_page + 2 }}</a>
+                        </li>
+                    {% elif cur_page < 3 %}
+                        {% for i in range(1, 6) %}
+                            {% if cur_page == i %}
+                                <li class="active"><a href="#">{{ i }}</a></li>
+                            {% else %}
+                                <li><a href="
+
+
+                                        {{ url_for('get_company') }}{{ '?page=' }}{{ i }}&stock_id={{ sid }}">{{ i }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                    {% elif total_page - cur_page < 2 %}
+                        {% for i in range(total_page-4, total_page + 1) %}
+                            {% if data.page == i %}
+                                <li class="active"><a href="#">{{ i }}</a></li>
+                            {% else %}
+                                <li><a href="
+
+
+                                        {{ url_for('get_company') }}{{ '?page=' }}{{ i }}&stock_id={{ sid }}">{{ i }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                {% endif %}
+                {% if next %}
+                    <li>
+                        <a href="{{ url_for('get_company') }}?page={{ cur_page + 1 }}&stock_id={{ sid }}"
+                           aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="disabled">
+                        <a href="#" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </div>
+
+    </div>
+
+    <!-- create Modal -->
+    <div class="modal fade" id="addModal" tabindex="-1" role="dialog" aria-labelledby="addModalLabel">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                            aria-hidden="true">&times;</span>
+                    </button>
+                    <h4 class="modal-title" id="addModalLabel"><b>新增公司</b></h4>
+                </div>
+                <div class="modal-body">
+                    尚未開放功能
+                    <!--                <form id="createForm">-->
+                    <!--                    <div class="form-group">-->
+                    <!--                        <label>-->
+                    <!--                            公司暱稱-->
+                    <!--                        </label>-->
+                    <!--                        <input type="text" class="form-control" placeholder="公司暱稱" id="nickname">-->
+                    <!--                    </div>-->
+                    <!--                    <div class="form-group">-->
+                    <!--                        <label>-->
+                    <!--                            股票代號-->
+                    <!--                        </label>-->
+                    <!--                        <input type="text" class="form-control" placeholder="股票代號" id="stock_id">-->
+                    <!--                    </div>-->
+                    <!--                    <div class="form-group">-->
+                    <!--                        <label>-->
+                    <!--                            guru股號-->
+                    <!--                        </label>-->
+                    <!--                        <input type="text" class="form-control" placeholder="guru股號" id="stock_tid">-->
+                    <!--                    </div>-->
+                    <!--                    <div class="form-group">-->
+                    <!--                        <label>-->
+                    <!--                            104ID-->
+                    <!--                        </label>-->
+                    <!--                        <input type="text" class="form-control" placeholder="104ID" id="bank_id">-->
+                    <!--                    </div>-->
+                    <!--                    <div class="form-group">-->
+                    <!--                        <label>-->
+                    <!--                            員工人數-->
+                    <!--                        </label>-->
+                    <!--                        <input type="text" class="form-control" placeholder="員工人數" id="employees">-->
+
+                    <!--                    </div>-->
+                    <!--                    <div class="form-group">-->
+                    <!--                        <label>台灣百大&大盤成員(多選)</label>-->
+                    <!--                        <div>-->
+                    <!--                            <label class="checkbox-inline">-->
+                    <!--                                <input type="checkbox" id="stock_0050"> 0050-->
+                    <!--                            </label>-->
+                    <!--                            <label class="checkbox-inline">-->
+                    <!--                                <input type="checkbox" id="stock_0056"> 0056-->
+                    <!--                            </label>-->
+                    <!--                            <label class="checkbox-inline">-->
+                    <!--                                <input type="checkbox" id="stock_00878"> 00878-->
+                    <!--                            </label>-->
+                    <!--                            <label class="checkbox-inline">-->
+                    <!--                                <input type="checkbox" id="tw100"> 百大-->
+                    <!--                            </label>-->
+                    <!--                        </div>-->
+                    <!--                    </div>-->
+                    <!--                </form>-->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">返 回</button>
+                    <button id="btnCreate" type="button" class="btn btn-primary">新 建</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- delete model -->
+    <div class="modal fade" id="delModal" tabindex="-1" role="dialog" aria-labelledby="delModalLabel">
+        <div class="modal-dialog" role="document">
+            <div class="alert alert-danger alert-dismissible fade in" role="alert">
+                <h4>公司刪除</h4>
+                <p style="font-size: 20px; color: red; margin: 10px 0;">刪除操作將移除數據不可復原,確認是否刪除</p>
+                <p>
+                    <button id="confirmDeleteBtn" type="button" class="btn btn-danger">確 認</button>
+                    <button type="button" class="btn btn-default" data-dismiss="modal">取 消</button>
+                </p>
+            </div>
+
+        </div>
+    </div>
+
+
+    <!-- edit model -->
+    <div class="modal fade" id="editModal" tabindex="-1" role="dialog" aria-labelledby="editModalLabel">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                            aria-hidden="true">&times;</span>
+                    </button>
+                    <h4 class="modal-title" id="editModalLabel"><b>數據更新</b></h4>
+                </div>
+                <div class="modal-body">
+                    <form id="editForm">
+                        <div class="form-group">
+                            <label>
+                                公司暱稱
+                            </label>
+                            <input type="text" class="form-control" placeholder="公司暱稱" id="edit_nickname">
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                股票代號
+                            </label>
+                            <input type="text" class="form-control" placeholder="股票代號" id="edit_stock_id">
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                筆記狀態
+                            </label>
+                            <input type="text" class="form-control" placeholder="筆記狀態" id="edit_state">
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                成長評估
+                            </label>
+                            <input type="text" class="form-control" placeholder="成長評估" id="edit_plot">
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                員工人數
+                            </label>
+                            <input type="text" class="form-control" placeholder="員工人數" id="edit_employees">
+
+                        </div>
+
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">取 消</button>
+                    <button id="confirmEditBtn" type="button" class="btn btn-primary">更 新</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- math model -->
+    <div class="modal fade" id="mathModal" tabindex="-1" role="dialog" aria-labelledby="mathModalLabel">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                            aria-hidden="true">&times;</span>
+                    </button>
+                    <h4 class="modal-title" id="mathModalLabel"><b></b></h4>
+                </div>
+                <div class="modal-body" style="height: 640px;">
+
+                    <div class="col-md-4 col-lg-4 col-sm-4">
+                        <label for="per-1">per-1</label>
+                        <input id="per-1" class="form-control" type="text" value="" readonly="readonly">
+                    </div>
+                    <div class="col-md-4 col-lg-4 col-sm-4">
+                        <label for="per-2">per-2</label>
+                        <input id="per-2" class="form-control" type="text" value="" readonly="readonly">
+                    </div>
+                    <div class="col-md-4 col-lg-4 col-sm-4">
+                        <label for="per-3">per-3</label>
+                        <input id="per-3" class="form-control" type="text" value="" readonly="readonly">
+                    </div>
+                    <div class="col-md-4 col-lg-4 col-sm-4">
+                        <label for="per1">per+1</label>
+                        <input id="per1" class="form-control" type="text" value="" readonly="readonly">
+                    </div>
+                    <div class="col-md-4 col-lg-4 col-sm-4">
+                        <label for="per2">per+2</label>
+                        <input id="per2" class="form-control" type="text" value="" readonly="readonly">
+                    </div>
+                    <div class="col-md-4 col-lg-4 col-sm-4">
+                        <label for="per3">per+3</label>
+                        <input id="per3" class="form-control" type="text" value="" readonly="readonly">
+                    </div>
+                    <div class="col-md-6 col-lg-6 col-sm-6">
+                        <label for="pb">PB</label>
+                        <input id="pb" type="text" class="form-control" value="" readonly="readonly">
+                    </div>
+                    <div class="col-md-6 col-lg-6 col-sm-6">
+                        <label for="cd">收盤價</label>
+                        <input id="cd" type="text" class="form-control" value="" readonly="readonly">
+                    </div>
+                    <div class="col-md-12 col-lg-12 col-sm-12">
+                        <label for="last-eps">去年EPS</label>
+                        <input type="text" class="form-control" placeholder="LastEPS" value="0" id="last-eps">
+                    </div>
+                    <div class="col-md-12 col-lg-12 col-sm-12">
+                        <label for="weight1">權重1</label>
+                        <input type="text" class="form-control" placeholder="權重1" value="0" id="weight1">
+                    </div>
+                    <div class="col-md-12 col-lg-12 col-sm-12">
+                        <label for="weight2">權重2</label>
+                        <input type="text" class="form-control" placeholder="權重2" value="0" id="weight2">
+                    </div>
+                    <div class="col-md-3 col-lg-3 col-sm-3">
+                        <label for="min-revenue">最小營收成長% </label>
+                        <input type="text" class="form-control" placeholder="最小營收成長%" value="0" id="min-revenue">
+                    </div>
+                    <div class="col-md-3 col-lg-3 col-sm-3">
+                        <label for="min-profit">最小獲利成長%</label>
+                        <input type="text" class="form-control" placeholder="最小獲利成長%" value="0" id="min-profit">
+                    </div>
+                    <div class="col-md-3 col-lg-3 col-sm-3">
+                        <label for="max-revenue">最大營收成長% </label>
+                        <input type="text" class="form-control" placeholder="最大營收成長%" value="0" id="max-revenue">
+                    </div>
+                    <div class="col-md-3 col-lg-3 col-sm-3">
+                        <label for="max-profit">最大獲利成長%</label>
+                        <input type="text" class="form-control" placeholder="最大獲利成長%" value="0" id="max-profit">
+                    </div>
+
+                    <div class="col-md-4 col-lg-4 col-sm-4">
+                        <label for="new-per-1">new-per-1</label>
+                        <input id="new-per-1" class="form-control ro" type="text" value="" readonly="readonly">
+                    </div>
+                    <div class="col-md-4 col-lg-4 col-sm-4">
+                        <label for="new-per-2">new-per-2</label>
+                        <input id="new-per-2" class="form-control ro" type="text" value="" readonly="readonly">
+                    </div>
+                    <div class="col-md-4 col-lg-4 col-sm-4">
+                        <label for="new-per-3">new-per-3</label>
+                        <input id="new-per-3" class="form-control ro" type="text" value="" readonly="readonly">
+                    </div>
+                    <div class="col-md-4 col-lg-4 col-sm-4">
+                        <label for="new-per1">new-per+1</label>
+                        <input id="new-per1" class="form-control ro" type="text" value="" readonly="readonly">
+                    </div>
+                    <div class="col-md-4 col-lg-4 col-sm-4">
+                        <label for="new-per2">new-per+2</label>
+                        <input id="new-per2" class="form-control ro" type="text" value="" readonly="readonly">
+                    </div>
+                    <div class="col-md-4 col-lg-4 col-sm-4">
+                        <label for="new-per3">new-per+3</label>
+                        <input id="new-per3" class="form-control ro" type="text" value="" readonly="readonly">
+                    </div>
+                    <div class="col-md-12 col-lg-12 col-sm-12">
+                        <label for="new-eps">EPS預測</label>
+                        <input type="text" class="form-control ro" placeholder="NewEPS" value="0" id="new-eps"
+                               readonly="readonly">
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button id="noteBtn" type="button" class="btn btn-default"
+                            style="background: yellow; border-color: yellow">筆 記
+                    </button>
+                    <button id="confirmMathBtn" type="button" class="btn btn-primary">計 算</button>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- note model -->
+    <div class="modal fade" id="noteModal" tabindex="-1" role="dialog" aria-labelledby="noteModalLabel">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                            aria-hidden="true">&times;</span>
+                    </button>
+                    <h4 class="modal-title" id="noteModalLabel"><b>筆記註解</b></h4>
+                </div>
+                <div class="modal-body">
+                    <textarea id="note-area" class="form-control" rows="5" maxlength="200"></textarea>
+                </div>
+
+                <div class="modal-footer">
+                    <button id="confirmNoteBtn" type="button" class="btn btn-success">儲 存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- note list model -->
+    <div class="modal fade" id="noteListModal" tabindex="-1" role="dialog" aria-labelledby="noteListModalLabel">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                            aria-hidden="true">&times;</span>
+                    </button>
+                    <h4 class="modal-title" id="noteListModalLabel"><b>筆記Top5</b></h4>
+                </div>
+                <div class="modal-body">
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th>內 容</th>
+                            <th>時 間</th>
+                        </tr>
+                        </thead>
+                        <tbody id="note-body">
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block js %}
+
+    <script>
+        var DELETE_ID;
+
+        $(function () {
+            bindBtnDeleteEvent()
+            bindConfirmDeleteEvent()
+        })
+
+
+        function bindBtnDeleteEvent() {
+            $(".delLoc").click(function () {
+                $("#delModal").modal("show");
+                DELETE_ID = $(this).attr("pk");
+            })
+        }
+
+        function bindConfirmDeleteEvent() {
+            $("#confirmDeleteBtn").click(function () {
+                $.ajax({
+                    url: '/api/company/' + DELETE_ID,
+                    type: 'delete',
+                    dataType: "JSON",
+                    success: function (resp) {
+                        if (!resp.code) {
+                            alert("刪除失敗,請重新嘗試")
+                        } else {
+                            alert("刪除成功,重新載入頁面")
+                            $("#delModal").modal("hide")
+                            location.reload(true)
+                        }
+                    },
+                    error: function (jqXHR, textStatus, errorThrown) {
+                        /*弹出jqXHR对象的信息*/
+                        alert("服務出錯");
+                        /*弹出其他两个参数的信息*/
+                    }
+                })
+            })
+        }
+    </script>
+
+    <script>
+        var STOCK_ID;
+        $(function () {
+            bindMathModelEvent();
+            calculateEvent();
+            bindNoteModelEvent();
+            bindNoteListEvent();
+            saveNoteEvent();
+            round();
+        })
+
+        function round(num) {
+            var m = Number((Math.abs(num) * 100).toPrecision(15));
+            return Math.round(m) / 100 * Math.sign(num);
+        }
+
+        function bindMathModelEvent() {
+            $(".math-btn").click(function () {
+                $("#new-per1").val("");
+                $("#new-per2").val("");
+                $("#new-per3").val("");
+                $("#new-per-1").val("");
+                $("#new-per-2").val("");
+                $("#new-per-3").val("");
+                $("#new-eps").val("");
+                $("#last-eps").val(0);
+                $("#weight1").val(0);
+                $("#weight2").val(0);
+                $("#min-revenue").val(0);
+                $("#min-profit").val(0);
+                $("#max-revenue").val(0);
+                $("#max-profit").val(0);
+
+                STOCK_ID = $(this).attr("pk");
+                var stock_nickname = $(this).attr("name");
+                $("#mathModalLabel").find('b').text(stock_nickname + " " + STOCK_ID + " EPS成長計算");
+                $.ajax({
+                    url: '/api/eps/' + STOCK_ID,
+                    type: 'get',
+                    dataType: "JSON",
+                    success: function (resp) {
+                        if (!resp.code) {
+                            alert("獲取資料失敗,請重新嘗試")
+                        } else {
+
+                            $("#pb").val(resp.data.pbr)
+                            $("#cd").val(resp.data.closePrice)
+                            $("#per-1").val(resp.data.per_w_1)
+                            $("#per-2").val(resp.data.per_w_2)
+                            $("#per-3").val(resp.data.per_w_3)
+                            $("#per1").val(resp.data["per_w1"])
+                            $("#per2").val(resp.data["per_w2"])
+                            $("#per3").val(resp.data["per_w3"])
+                            $("#mathModal").modal("show");
+                        }
+                    },
+                    error: function (jqXHR, textStatus, errorThrown) {
+                        /*弹出jqXHR对象的信息*/
+                        alert("服務出錯");
+                        /*弹出其他两个参数的信息*/
+                    }
+                })
+
+
+            })
+        }
+
+        function calculateEvent() {
+            $("#confirmMathBtn").click(function () {
+                var lastEPS = $("#last-eps").val();
+                var w1 = $("#weight1").val();
+                var w2 = $("#weight2").val();
+                var mr = $("#min-revenue").val();
+                var mp = $("#min-profit").val();
+                var mR = $("#max-revenue").val();
+                var mP = $("#max-profit").val();
+                var cd = $("#cd").val();
+                var per_1 = $("#per-1").val();
+                var per_2 = $("#per-2").val();
+                var per_3 = $("#per-3").val();
+                var per1 = $("#per1").val();
+                var per2 = $("#per2").val();
+                var per3 = $("#per3").val();
+
+                try {
+                    var new_eps = Number(lastEPS) * Number(w1) * (1 + Number(mr) * 0.01) * (1 + Number(mp) * 0.01) + Number(lastEPS) * Number(w2) * (1 + Number(mR) * 0.01) * (1 + Number(mP) * 0.01)
+                    $("#new-eps").val(round(new_eps));
+                } catch (e) {
+                    $("#new-eps").val("error")
+                }
+
+                try {
+                    var new_per_1 = new_eps * Number(per_1)
+                    $("#new-per-1").val(round(new_per_1));
+                } catch (e) {
+                    $("#new-per-1").val("");
+                }
+                try {
+                    var new_per_2 = new_eps * Number(per_2)
+                    $("#new-per-2").val(round(new_per_2));
+                } catch (e) {
+                    $("#new-per-2").val("");
+                }
+                try {
+                    var new_per_3 = new_eps * Number(per_3)
+                    $("#new-per-3").val(round(new_per_3));
+                } catch (e) {
+                    $("#new-per-3").val("");
+                }
+                try {
+                    var new_per1 = new_eps * Number(per1)
+                    $("#new-per1").val(round(new_per1));
+                } catch (e) {
+                    $("#new-per1").val("");
+                }
+                try {
+                    var new_per2 = new_eps * Number(per2)
+                    $("#new-per2").val(round(new_per2));
+                } catch (e) {
+                    $("#new-per2").val("");
+                }
+                try {
+                    var new_per3 = new_eps * Number(per3)
+                    $("#new-per3").val(round(new_per3));
+                } catch (e) {
+                    $("#new-per3").val("");
+                }
+            })
+        }
+
+        function bindNoteModelEvent() {
+            $("#noteBtn").click(function () {
+                $("#noteModal").modal("show");
+            })
+        }
+
+        function saveNoteEvent() {
+            $("#confirmNoteBtn").click(function () {
+
+                var note_text = $("#note-area").val();
+                if (!note_text) {
+                    alert("內容不得為空")
+                } else {
+                    req_body = {
+                        note: note_text,
+                        stock_id: STOCK_ID
+                    }
+
+                    $.ajax({
+                        url: "/api/note",
+                        type: "post",
+                        dataType: "JSON",
+                        contentType: "application/json",
+                        data: JSON.stringify(req_body),
+                        success: function (resp) {
+                            if (!resp.code) {
+                                alert("新增筆記失敗,請重新嘗試")
+                            } else {
+                                alert("筆記成功")
+                                $("#note-area").val("")
+                                $("#noteModal").modal("hide")
+                            }
+                        },
+                        error: function (jqXHR, textStatus, errorThrown) {
+                            /*弹出jqXHR对象的信息*/
+                            alert("服務出錯");
+                            /*弹出其他两个参数的信息*/
+                        }
+                    })
+                }
+            })
+        }
+
+        function bindNoteListEvent() {
+            $(".noteList-btn").click(function () {
+                STOCK_ID = $(this).attr("pk");
+                $.ajax({
+                    url: '/api/note?stock_id=' + STOCK_ID,
+                    type: 'get',
+                    dataType: "JSON",
+                    success: function (resp) {
+                        if (!resp.code) {
+                            alert("獲取資料失敗,請重新嘗試")
+                        } else {
+                            $("#note-body").html(resp.data);
+                            $("#noteListModal").modal("show");
+                        }
+                    },
+                    error: function (jqXHR, textStatus, errorThrown) {
+                        /*弹出jqXHR对象的信息*/
+                        alert("服務出錯");
+                        /*弹出其他两个参数的信息*/
+                    }
+                })
+
+            })
+        }
+    </script>
+    <script>
+        var pk;
+        $(function () {
+            bindEditLocEvent()
+            bindConfirmEditEvent()
+        })
+
+        function bindEditLocEvent() {
+            $(".editLoc").click(function () {
+                pk = $(this).attr("pk");
+                $.ajax({
+                    url: '/api/company/' + pk,
+                    type: 'get',
+                    dataType: "JSON",
+                    success: function (resp) {
+                        if (!resp.code) {
+                            alert("網路出錯,請重新嘗試")
+                        } else {
+                            $("#edit_nickname").val(resp.data.nickname);
+                            $("#edit_stock_id").val(resp.data.stock_id);
+                            $("#edit_state").val(resp.data.state);
+                            $("#edit_plot").val(resp.data.plot);
+                            $("#edit_employees").val(resp.data.employees);
+                            $("#editModal").modal("show")
+                        }
+                    },
+                    error: function (jqXHR, textStatus, errorThrown) {
+                        /*弹出jqXHR对象的信息*/
+                        alert("服務出錯");
+                        /*弹出其他两个参数的信息*/
+                    }
+
+                })
+            })
+        }
+
+        function bindConfirmEditEvent() {
+            $("#confirmEditBtn").click(function () {
+                req_body = {
+                    nickname: $("#edit_nickname").val(),
+                    stock_id: $("#edit_stock_id").val(),
+                    state: $("#edit_state").val(),
+                    plot: $("#edit_plot").val(),
+                    employees: $("#edit_employees").val(),
+
+                }
+
+                $.ajax({
+                    url: "/api/company/" + pk,
+                    type: "put",
+                    dataType: "JSON",
+                    contentType: "application/json",
+                    data: JSON.stringify(req_body),
+                    success: function (resp) {
+                        if (!resp.code) {
+                            alert("更新失敗,請重新嘗試")
+                        } else {
+                            alert("更新成功,重新載入數據")
+                            $("#editForm")[0].reset()
+                            $("#editModal").modal("hide")
+                            location.reload(true)
+                        }
+                    },
+                    error: function (jqXHR, textStatus, errorThrown) {
+                        /*弹出jqXHR对象的信息*/
+                        alert("服務出錯");
+                        /*弹出其他两个参数的信息*/
+                    }
+                })
+            })
+        }
+
+    </script>
+{% endblock %}

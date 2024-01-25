@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    {% block pagetitle %}{% endblock %}
+    <title>Title</title>
+    <link href="{{ url_for('static', path='plugins/bootstrap-3.4.1/css/bootstrap.css') }}" rel="stylesheet">
+    <!--    <link href="D:/Python3-10/MySite/static/plugins/bootstrap-3.4.1/css/bootstrap.cs" rel="stylesheet">-->
+    <style>
+        {
+        %
+        block
+        css
+        %
+        }
+        {
+        %
+        endblock
+        %
+        }
+        .navbar {
+            border-radius: 0;
+        }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-default">
+    <div class="container">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse"
+                    data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="{{ url_for('home')}}">文穎分析系統</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+            {% block search %}{% endblock %}
+            <div class="navbar-right">
+                <button id="msgBtn" type="button" class="btn btn-primary navbar-btn">任務通知 <span
+                        class="badge"></span>
+                </button>
+
+                <button id="taskBtn" type="button" class="btn btn-primary navbar-btn">任務群組</button>
+                {% block topbtn %}{% endblock %}
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div>
+    {% block content %}{% endblock %}
+</div>
+
+<div class="modal fade" id="taskModal" tabindex="-1" role="dialog" aria-labelledby="taskModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                        aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title" id="taskModalLabel" style="text-align: center"><b>觀察群組列表</b></h4>
+            </div>
+            <div class="modal-body row" id="taskRow">
+
+                <!--                    {% for g in group %}-->
+                <!--                    <div style="margin-bottom: 5px;text-align: center">-->
+                <!--                        <button task_id="{{g.uid}}" type="button" class="btn-lg btn-primary" style="width: 80%" onclick="startTaskEvent(this)">{{g.title}}</button>-->
+                <!--                    </div>-->
+                <!--                    {% endfor %}-->
+
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="msgModal" tabindex="-1" role="dialog" aria-labelledby="msgModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                        aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title" id="msgModalLabel" style="text-align: center"><b>觀察群組列表</b></h4>
+            </div>
+            <div class="modal-body">
+                <h3 id="notification-content" class="modal-content" style="background: red;text-align: center"></h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script src="{{ url_for('static', path='js/jquery-3.6.0.min.js') }}"></script>
+<script src="{{ url_for('static', path='plugins/bootstrap-3.4.1/js/bootstrap.min.js') }}"></script>
+<script type="text/javascript" src="https://assets.pyecharts.org/assets/echarts.min.js"></script>
+
+<script>
+    $(function () {
+        clickTaskBtn();
+        get_groups();
+        clickMsgBtn();
+    })
+
+    function get_groups() {
+        $.ajax({
+            url: "/groups/list",
+            type: "get",
+            dataType: "JSON",
+            contentType: "application/json",
+            success: function (resp) {
+                if (!resp.code) {
+                    alert(resp.msg)
+                } else {
+                    $("#taskRow").html(resp.data)
+                }
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                /*弹出jqXHR对象的信息*/
+                alert("服務出錯");
+                /*弹出其他两个参数的信息*/
+            }
+        })
+
+    }
+
+    function clickTaskBtn() {
+        $("#taskBtn").click(function () {
+            $("#taskModal").modal("show");
+        })
+    }
+
+    function clickMsgBtn() {
+        $("#msgBtn").click(function () {
+            var unreads = $(".badge").text();
+            if (unreads) {
+                $(".badge").text("");
+            }
+            $("#msgModal").modal("show");
+
+        })
+    }
+
+    function startTaskEvent(self) {
+        var tid = $(self).attr("task_id")
+        console.log(tid)
+        req_body = {
+            uid: tid
+        }
+
+        $.ajax({
+            url: "/addTask",
+            type: "post",
+            dataType: "JSON",
+            contentType: "application/json",
+            data: JSON.stringify(req_body),
+            success: function (resp) {
+                if (!resp.code) {
+                    alert(resp.msg)
+                } else {
+                    alert(resp.msg)
+                    $(self).removeClass('btn-primary');
+                    $(self).addClass('btn-danger');
+                    $(self).attr("disabled", true)
+                }
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                /*弹出jqXHR对象的信息*/
+                alert("服務出錯");
+                /*弹出其他两个参数的信息*/
+            }
+        })
+    }
+</script>
+
+<script type="text/javascript">
+    var push_data = new EventSource("/notification")
+    push_data.onopen = function (event) {
+        // open事件
+        console.log("open event");
+    };
+    push_data.addEventListener('message', function (event) {
+        // var data = JSON.parse(event.data);
+        msgContent = event.data
+        if (msgContent) {
+            // alert(msgContent);
+            $(".badge").text("新通知");
+            $("#notification-content").text(msgContent);
+            // document.getElementById("result").append(msgContent + "\r\n");
+
+        }
+
+
+    }, false);
+    push_data.addEventListener('error', function (event) {
+        // error事件
+        console.log("error event");
+        console.log(event);
+    }, false);
+    xmlHttp = null;
+
+    function myFunction() {
+
+        try {// Firefox, Opera 8.0+, Safari, IE7
+            xmlHttp = new XMLHttpRequest();
+        } catch (e) {// Old IE
+            try {
+                xmlHttp = new ActiveXObject("Microsoft.XMLHTTP");
+            } catch (e) {
+                alert("Your browser does not support XMLHTTP!");
+                return;
+            }
+        }
+        url = "http://localhost:8888/";
+        xmlHttp.open("GET", url, false);
+        xmlHttp.send(null);
+        document.getElementById("response").innerHTML = xmlHttp.responseText;
+    }
+</script>
+
+
+{% block js %}{% endblock %}
+</body>
+</html>

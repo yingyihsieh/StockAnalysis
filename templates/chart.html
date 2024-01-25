@@ -1,0 +1,40 @@
+{% extends 'layout.html' %}
+
+{% block pagetitle %}
+<title>文穎數據分析系統-圖表分析</title>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div id="chart"  style="width:960px; height:540px;">
+
+    </div>
+
+</div>
+
+{% endblock %}
+
+
+{% block js %}
+<script>
+    var cur_chart = echarts.init(document.getElementById('chart'), 'white', {renderer: 'canvas'});
+
+    $(
+        function () {
+            fetchChart();
+        }
+    );
+
+    function fetchChart() {
+
+        $.ajax({
+            type: "GET",
+            url: "/img/{{stock_id}}",
+            dataType: 'json',
+            success: function (result) {
+                cur_chart.setOption(JSON.parse(result));
+            }
+        });
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,60 @@
+{% extends 'layout.html' %}
+
+{% block pagetitle %}
+<title>文穎數據分析系統</title>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="panel panel-default">
+        <!-- Default panel contents -->
+        <div class="panel-heading">SiteMap</div>
+
+        <!-- List group -->
+        <ul class="list-group">
+            <li class="list-group-item"><a href="/groups/index" >我的觀察清單</a></li>
+            <li class="list-group-item"><a href="/company/list" >公司列表</a></li>
+            <li class="list-group-item"><a href="/stock/world" >總經列表</a></li>
+            <li class="list-group-item"><a href="/trend/recruitment" >招聘趨勢</a></li>
+            <li class="list-group-item"><input id="newsTrend_target" type="text" placeholder="stock_id" /><button id="newsTrendBtn" class="btn btn-primary" style="margin-left: 8px">新聞趨勢</button></li>
+            <li class="list-group-item"><input id="jer_target" type="text" placeholder="stock_id" /><button id="jerBtn" class="btn btn-primary" style="margin-left: 8px">JER趨勢</button></li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
+
+{% block js %}
+<script>
+    $(function () {
+        goNewsTrendEvent()
+        goJEREvent()
+    })
+
+    function goNewsTrendEvent() {
+        $("#newsTrendBtn").click(function () {
+            var pk = $("#newsTrend_target").val();
+            if (!pk){
+                alert('請輸入股號');
+            } else {
+                window.open('/trend/news/'+pk, '_parent');
+                $("#newsTrend_target").val('');
+            }
+
+        })
+    }
+
+    function goJEREvent() {
+        $("#jerBtn").click(function () {
+            var pk = $("#jer_target").val();
+            if (!pk){
+                alert('請輸入股號');
+            } else {
+                window.open('/chart/'+pk, '_parent');
+                $("#jer_target").val('');
+            }
+
+        })
+    }
+</script>
+{% endblock %}

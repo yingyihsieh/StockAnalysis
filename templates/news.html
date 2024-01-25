@@ -1,0 +1,226 @@
+{% extends 'layout.html' %}
+
+{% block pagetitle %}<title>新聞趨勢</title>{% endblock %}
+
+{% block topbtn %}
+
+<a id="addCompany" class="btn btn-success" data-toggle="modal" data-target="#addModal">
+    <span class="glyphicon glyphicon-plus-sign" aria-hidden="true"></span>
+    儲 存
+</a>
+
+{% endblock %}
+
+{% block content %}
+<div class="container">
+
+    <div class="thumbnail">
+
+        <div id="chart" style="width:960px; height:540px;"></div>
+
+        <div class="caption">
+            <div class="list-group" style="margin-left: 80px">
+                {% for idx in range(news_set|length) %}
+                <a target="_blank" href="{{news_set[idx].link}}" class="list-group-item" style="width: 800px">
+                    <{{idx+1}}> {{news_set[idx].title}}
+                </a>
+                {% endfor %}
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- add Modal -->
+<div class="modal fade" id="addModal" tabindex="-1" role="dialog" aria-labelledby="addModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header" style="text-align: center">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title" id="addModalLabel"><b>將股號加入至...</b></h4>
+            </div>
+            <div class="modal-body">
+                <div class="groupList" style="text-align: center">
+                    <ul class="list-group">
+                        {% for obj in group %}
+                        <li class="list-group-item">
+                            <input uid="{{obj.uid}}" class="group-items groupTarget" name="{{obj.title}}" type="checkbox" style="margin-right: 10px">{{obj.title}}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div class="submitGroup" style="text-align: center">
+                    <button id="groupCreate" type="button" class="btn btn-success" data-toggle="modal"
+                            data-target="#listSubModel">
+                    <span class="glyphicon glyphicon-plus-sign" aria-hidden="true">
+                    </span>
+                        新 建 清 單
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer" style="text-align: center">
+                <button id="listSave" type="button" class="btn btn-primary">
+                    <span class="glyphicon glyphicon-save" aria-hidden="true">
+                    </span>
+                    確 定
+                </button>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!--list sub model-->
+<div class="modal fade" id="listSubModel" tabindex="-1" role="dialog" aria-labelledby="listSubModelLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title" id="listSubModelLabel"><b>建立清單</b></h4>
+            </div>
+            <div class="modal-body">
+                <form id="listForm">
+                    <div class="form-group">
+                        <label>
+                            公司暱稱
+                        </label>
+                        <input type="text" class="form-control" placeholder="清單名稱" id="listTittle">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">返 回</button>
+                <button id="listCreate" type="button" class="btn btn-success">新 建</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+
+{% block js %}
+
+<script>
+    var cur_chart = echarts.init(document.getElementById('chart'), 'white', {renderer: 'canvas'});
+
+    $(
+        function () {
+            fetchChart();
+        }
+    );
+
+    function fetchChart() {
+
+        $.ajax({
+            type: "GET",
+            url: "/statistic/news?stock_id={{stock_id}}&company={{stock_nickname}}",
+            dataType: 'json',
+            success: function (result) {
+                cur_chart.setOption(JSON.parse(result));
+            }
+        });
+    }
+</script>
+
+<script>
+
+    var created = false;
+    var group_list = new Array();
+
+    $(function () {
+        bindGroupCreateEvent();
+        bindSave2ListEvent();
+    })
+
+    function bindGroupCreateEvent() {
+        $("#listCreate").click(function () {
+            req_body = {
+                title: $("#listTittle").val(),
+            }
+            $.ajax({
+                url: "/addGroup",
+                type: "post",
+                dataType: "JSON",
+                contentType: "application/json",
+                data: JSON.stringify(req_body),
+                success: function (resp) {
+                    if (!resp.code) {
+                        alert(resp.msg)
+                    } else {
+                        $("#listForm")[0].reset()
+                        var html_str = '<li class = "list-group-item"><input uid="'+resp.data.uid +'" class="group-items groupTarget" type = "checkbox" style = "margin-right: 10px" name="' + resp.data.title + '">' + resp.data.title + '</li>'
+                        var groupList_html = '<div style="margin-bottom: 5px;text-align: center"><button task_id = "'+resp.data.uid+'" type = "button" className ="btn-lg btn-primary" style="width: 80%" onClick="startTaskEvent(this)">'+resp.data.title+'</button></div>'
+                        alert(resp.msg)
+                        created = true
+                        $(".list-group").append(html_str)
+                        // $("#taskRow").append(groupList_html)
+                        get_groups();
+                        $("#listSubModel").modal("hide")
+
+                    }
+                },
+                error: function (jqXHR, textStatus, errorThrown) {
+                    /*弹出jqXHR对象的信息*/
+                    alert("服務出錯");
+                    /*弹出其他两个参数的信息*/
+                }
+            })
+        })
+    }
+
+    function bindSave2ListEvent() {
+        $("#listSave").click(function () {
+            $('.group-items').each(function (i, n) {
+                var uid = $(n).attr("uid")
+                var name = $(n).attr("name")
+                console.log(uid)
+                if ($(n).is(':checked')) {
+                    var temp_obj = {
+                        'uid': uid,
+                        'title': name
+                    }
+                    group_list.push(temp_obj)
+                }
+            });
+            console.log(group_list)
+            req_body = {
+                groups: group_list,
+                stock_id: "{{stock_id}}",
+                stock_nickname: "{{stock_nickname}}"
+            }
+            $.ajax({
+                url: "/addGroupList",
+                type: "post",
+                dataType: "JSON",
+                contentType: "application/json",
+                data: JSON.stringify(req_body),
+                success: function (resp) {
+                    if (!resp.code) {
+                        alert(resp.msg)
+                    } else {
+                        alert(resp.msg)
+                        $('.group-items').each(function () {
+                             $(this).prop("checked", false);
+                        })
+                        $("#addModal").modal("hide")
+                    }
+                },
+                error: function (jqXHR, textStatus, errorThrown) {
+                    /*弹出jqXHR对象的信息*/
+                    console.log(jqXHR)
+                    alert("服務出錯");
+                    /*弹出其他两个参数的信息*/
+                }
+            })
+            group_list = new Array();
+
+            // $("#addModal").modal("hide")
+        })
+    }
+</script>
+
+
+{% endblock %}

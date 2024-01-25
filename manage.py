@@ -434,7 +434,7 @@ async def retrieve_company_eps(stock_id: str = Path(...),
     try:
         model = db.company2
         res = await model.find_one({'stock_id': stock_id},
-                                   {'nickname': 1, 'stock_id': 1, 'employees': 1,
+                                   {'_id':0, 'nickname': 1, 'stock_id': 1, 'employees': 1,
                                     'closePrice': 1, 'pbr': 1, 'per_w_1': 1, 'per_w_2': 1, 'per_w_3': 1,
                                     'per_w1': 1, 'per_w2': 1, 'per_w3': 1, })
         print(res)
@@ -452,7 +452,7 @@ async def retrieve_company(stock_id: str = Path(...),
     try:
         model = db.company2
         res = await model.find_one({'stock_id': stock_id},
-                                   {'nickname': 1, 'stock_id': 1, 'employees': 1,
+                                   {'_id':0, 'nickname': 1, 'stock_id': 1, 'employees': 1,
                                     'closePrice': 1, 'pbr': 1, 'per_w_1': 1, 'per_w_2': 1, 'per_w_3': 1,
                                     'per_w1': 1, 'per_w2': 1, 'per_w3': 1, })
         print(res)

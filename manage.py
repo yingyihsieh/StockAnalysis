@@ -13,7 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from database import mongo_connector, redis_cache
 from utils import tsFormat, stockChart, BadException, ForbiddenException, markLine, message_generator
-from serialize import CompanyModel, GroupBody, GroupListBody, NewsTaskBody, NoteBody
+from serialize import CompanyModel, GroupBody, GroupListBody, NewsTaskBody, NoteBody, EPSBody
 from settings import msg_content
 from sse_starlette.sse import EventSourceResponse
 
@@ -428,6 +428,18 @@ async def get_company(request: Request,
     )
 
 
+@app.post('/api/eps_record')
+async def create_eps(body: EPSBody,
+                     db=Depends(mongo_connector)):
+    model = db.eps
+    item = body.__dict__
+    try:
+        await model.insert_one(item)
+        return {'code': 1, 'data': None, 'msg': 'insert success'}
+    except:
+        return {'code':0, 'data':None, 'msg': 'insert failed'}
+
+
 @app.get('/api/eps/{stock_id}')
 async def retrieve_company_eps(stock_id: str = Path(...),
                            db=Depends(mongo_connector)):
@@ -438,9 +450,16 @@ async def retrieve_company_eps(stock_id: str = Path(...),
                                     'closePrice': 1, 'pbr': 1, 'per_w_1': 1, 'per_w_2': 1, 'per_w_3': 1,
                                     'per_w1': 1, 'per_w2': 1, 'per_w3': 1, })
         print(res)
+        calculate_data = await db.eps.find_one({'stock_id': stock_id},
+                                               {'_id':0, 'eps': 1, 'per_1': 1,
+                                                'per_2':1, 'per_3': 1, 'per1': 1,
+                                                'per2':1, 'per3': 1}).sort('_id', -1).limit(1)
+
+        c_data = None if not calculate_data else calculate_data
+
         if not res:
-            return {'code': 0}
-        return {'code': 1, 'data': res}
+            return {'code': 0, 'msg': 'company data lost'}
+        return {'code': 1, 'data': res, 'c_data': c_data, 'msg': 'success'}
     except Exception as e:
         print(e)
         raise ForbiddenException(msg='server error')

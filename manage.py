@@ -472,9 +472,8 @@ async def retrieve_company(stock_id: str = Path(...),
         model = db.company2
         res = await model.find_one({'stock_id': stock_id},
                                    {'_id':0, 'nickname': 1, 'stock_id': 1, 'employees': 1,
-                                    'closePrice': 1, 'pbr': 1, 'per_w_1': 1, 'per_w_2': 1, 'per_w_3': 1,
-                                    'per_w1': 1, 'per_w2': 1, 'per_w3': 1, })
-        print(res)
+                                    'stockType': 1})
+        print(len(res['stockType']))
         if not res:
             return {'code': 0}
         return {'code': 1, 'data': res}
@@ -489,16 +488,7 @@ async def update_company(body: CompanyModel,
                          db=Depends(mongo_connector)):
     try:
         print(body)
-        if body.plot:
-            if body.plot.startswith('('):
-                body.plot = body.plot.replace(body.plot[1:4], pendulum.today(tz="Asia/Taipei").format("MMM"))
-            else:
-                body.plot = f'({pendulum.today(tz="Asia/Taipei").format("MMM")}){body.plot}'
-        if body.state:
-            if body.state.startswith('('):
-                body.state = body.state.replace(body.state[1:4], pendulum.today(tz="Asia/Taipei").format("MMM"))
-            else:
-                body.state = f'({pendulum.today(tz="Asia/Taipei").format("MMM")}){body.state}'
+
         model = db.company2
         target = await model.update_one({'stock_id': stock_id},
                                         {'$set': body.__dict__})

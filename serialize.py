@@ -5,8 +5,7 @@ from typing import Optional, List
 class CompanyModel(BaseModel):
     nickname: str
     stock_id: str
-    state: Optional[str] = ''
-    plot: Optional[str] = ''
+    stockType: Optional[str] = ''
     employees: Optional[int] = 0
 
 

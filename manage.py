@@ -450,12 +450,12 @@ async def retrieve_company_eps(stock_id: str = Path(...),
                                     'closePrice': 1, 'pbr': 1, 'per_w_1': 1, 'per_w_2': 1, 'per_w_3': 1,
                                     'per_w1': 1, 'per_w2': 1, 'per_w3': 1, })
         print(res)
-        calculate_data = await db.eps.find_one({'stock_id': stock_id},
-                                               {'_id':0, 'eps': 1, 'per_1': 1,
-                                                'per_2':1, 'per_3': 1, 'per1': 1,
-                                                'per2':1, 'per3': 1}).sort('_id', -1).limit(1)
+        calculate_data = await db.eps.find({'stock_id': stock_id},
+                                           {'_id': 0, 'eps': 1, 'per_1': 1,
+                                            'per_2': 1, 'per_3': 1, 'per1': 1,
+                                            'per2': 1, 'per3': 1}).sort([('_id', -1)]).limit(1).to_list(1)
 
-        c_data = None if not calculate_data else calculate_data
+        c_data = {} if not calculate_data else calculate_data[0]
 
         if not res:
             return {'code': 0, 'msg': 'company data lost'}
@@ -565,6 +565,8 @@ async def retrive_note(stock_id: str=Query(...),
         return {'code': 1, 'data': html_content, 'msg': 'Note success!'}
     except:
         return {'code': 0, 'data': '', 'msg': 'Note fail!'}
+
+
 
 
 if __name__ == '__main__':

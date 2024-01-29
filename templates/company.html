@@ -97,9 +97,13 @@
 
 
 
+
+
                                 {{ url_for('get_company') }}{{ '?page=' }}{{ cur_page - 2 }}&stock_id={{ sid }}">{{ cur_page-2 }}</a>
                         </li>
                         <li><a href="
+
+
 
 
 
@@ -127,6 +131,8 @@
 
 
 
+
+
                                         {{ url_for('get_company') }}{{ '?page=' }}{{ i }}&stock_id={{ sid }}">{{ i }}</a>
                                 </li>
                             {% endif %}
@@ -137,6 +143,8 @@
                                 <li class="active"><a href="#">{{ i }}</a></li>
                             {% else %}
                                 <li><a href="
+
+
 
 
 
@@ -432,6 +440,17 @@
                     <h4 class="modal-title" id="noteModalLabel"><b>筆記註解</b></h4>
                 </div>
                 <div class="modal-body">
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th>內 容</th>
+                            <th>時 間</th>
+                        </tr>
+                        </thead>
+                        <tbody id="note-history">
+
+                        </tbody>
+                    </table>
                     <textarea id="note-area" class="form-control" rows="5" maxlength="200"></textarea>
                 </div>
 
@@ -523,6 +542,7 @@
             bindNoteListEvent();
             saveNoteEvent();
             round();
+            getCurrentDate();
         })
 
         function round(num) {
@@ -574,9 +594,6 @@
                             $("#new-per1").val(resp.c_data.per1)
                             $("#new-per2").val(resp.c_data.per2)
                             $("#new-per3").val(resp.c_data.per3)
-
-
-                            $("#mathModal").modal("show");
                         }
                     },
                     error: function (jqXHR, textStatus, errorThrown) {
@@ -585,7 +602,7 @@
                         /*弹出其他两个参数的信息*/
                     }
                 })
-
+                $("#mathModal").modal("show");
 
             })
         }
@@ -692,6 +709,23 @@
 
         function bindNoteModelEvent() {
             $("#noteBtn").click(function () {
+                $.ajax({
+                    url: '/api/note?stock_id=' + STOCK_ID,
+                    type: 'get',
+                    dataType: "JSON",
+                    success: function (resp) {
+                        if (!resp.code) {
+                            alert("獲取資料失敗,請重新嘗試")
+                        } else {
+                            $("#note-history").html(resp.data);
+                        }
+                    },
+                    error: function (jqXHR, textStatus, errorThrown) {
+                        /*弹出jqXHR对象的信息*/
+                        alert("服務出錯");
+                        /*弹出其他两个参数的信息*/
+                    }
+                })
                 $("#noteModal").modal("show");
             })
         }

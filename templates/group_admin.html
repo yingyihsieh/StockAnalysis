@@ -1,0 +1,136 @@
+{% extends 'layout.html' %}
+
+{% block pagetitle %}
+    <title>文穎數據分析系統-群組管理</title>
+{% endblock %}
+
+
+{% block content %}
+    <div class="container">
+        {% for g in range(groups|length) %}
+            <div class="panel panel-default">
+                <!-- Default panel contents -->
+
+                <div class="panel-heading" ><button class="btn btn-lg-default groupHead" style="font-size: 20px">{{ groups[g].title }}</button></div>
+
+
+                <!-- Table -->
+                {% if g == 0 %}
+                    <table class="table" id="{{ groups[g].uid }}">
+                        <thead>
+                        <tr>
+                            <th>股號</th>
+                            <th>公司</th>
+                            <th>操作</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for obj in groups[g].group_docs %}
+                            <tr>
+                                <td>{{ obj.stock_id }}</td>
+                                <td>{{ obj.stock_nickname }}</td>
+                                <td>
+                                    <button class="btn-danger" gid="{{ groups[g].uid }}" pk="{{ obj.stock_id }}">刪 除
+                                    </button>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <table class="table hide" id="{{ groups[g].uid }}">
+                        <thead>
+                        <tr>
+                            <th>股號</th>
+                            <th>公司</th>
+                            <th>操作</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for obj in groups[g].group_docs %}
+                            <tr>
+                                <td>{{ obj.stock_id }}</td>
+                                <td>{{ obj.stock_nickname }}</td>
+                                <td>
+                                    <button class="btn-danger" gid="{{ groups[g].uid }}" pk="{{ obj.stock_id }}">刪 除
+                                    </button>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}
+
+{% block js %}
+    <script>
+        var DELETE_ID;
+        var GROUP_ID;
+        var GROUP_PK;
+        $(function () {
+            groupListDeleteEvent()
+            switchShowHideEvent()
+        })
+
+        function groupListDeleteEvent() {
+            $(".btn-danger").click(function () {
+                DELETE_ID = $(this).attr("pk");
+                GROUP_ID = $(this).attr("gid");
+                $(this).parent().parent().empty();
+                $.ajax({
+                    url: '/api/groupList/del?sid=' + DELETE_ID + '&gid=' + GROUP_ID,
+                    type: 'delete',
+                    dataType: "JSON",
+                    success: function (resp) {
+                        if (!resp.code) {
+                            alert(resp.msg)
+                        } else {
+                            $(this).parent().parent().empty();
+                            alert(resp.msg)
+                        }
+                    },
+                    error: function (jqXHR, textStatus, errorThrown) {
+                        /*弹出jqXHR对象的信息*/
+                        alert("服務出錯");
+                        /*弹出其他两个参数的信息*/
+                    }
+                })
+            })
+        }
+
+        function switchShowHideEvent() {
+            $(".groupHead").click(function () {
+
+                GROUP_PK = $(this).parent().next().get(0).id;
+                console.log(GROUP_PK)
+                if ($(this).parent().next().hasClass("hide")) {
+                    $.ajax({
+                    url: '/api/groupList/read?gid=' + GROUP_PK,
+                    type: 'get',
+                    dataType: "JSON",
+                    success: function (resp) {
+                        if (!resp.code) {
+                            alert(resp.msg)
+                        } else {
+                            $(this).parent().next().find("tbody").html(resp.data);
+
+                        }
+                    },
+                    error: function (jqXHR, textStatus, errorThrown) {
+                        /*弹出jqXHR对象的信息*/
+                        alert("服務出錯");
+                        /*弹出其他两个参数的信息*/
+                    }
+                })
+                    $(this).parent().next().removeClass("hide")
+                    $(this).parent().parent().siblings().children("table").addClass("hide")
+                } else {
+                    $(this).parent().next().addClass("hide")
+                }
+            })
+        }
+    </script>
+{% endblock %}

@@ -87,6 +87,80 @@ async def news_in_time(db=Depends(mongo_connector)):
     return {'code':1, 'data':'stocks', 'msg': '成功'}
 
 
+@app.get('/groups/admin')
+async def groups_admin(request: Request,
+                       db=Depends(mongo_connector)):
+    lookup = {
+        '$lookup':
+            {
+                "from": "group_news",  # 需要联合查询的另一张表B
+                "localField": "uid",  # 表A的字段
+                "foreignField": "group_id",  # 表B的字段
+                "as": "group_docs"  # 根据A、B联合生成的新字段名
+            },
+    }
+    project = {
+        '$project': {
+            '_id': 0, 'group_docs._id': 0
+        }
+    }
+    data = db.groups.aggregate([lookup, project])
+    dataset = [d async for d in data]
+    print(dataset)
+    return templates.TemplateResponse(
+        'group_admin.html',
+        {
+            'request': request,
+            'groups': dataset,
+        },
+    )
+
+
+@app.delete('/api/groupList/del')
+async def groupList_del(sid: str=Query(...),
+                        gid: str=Query(...),
+                        db=Depends(mongo_connector)):
+    try:
+        model = db.group_news
+        await model.delete_one({'stock_id': sid, 'group_id': gid})
+        # data = model.find({'group_id': gid}, {'stock_id':1, 'stock_nickname': 1})
+        # queryset = list()
+        # async for d in data:
+        #     string = f'''<tr>
+        #             <td>{ d["stock_id"] }</td>
+        #             <td>{ d["stock_nickname"] }</td>
+        #             <td>
+        #                 <button class="btn-danger" gid="{ gid }" pk="{ d["stock_id"] }">刪 除
+        #                 </button>
+        #             </td>
+        #         </tr>'''
+        #     queryset.append(string)
+        # query_html = '\n'.join(queryset)
+        return {'code': 1, 'data': None, 'msg': 'delete success'}
+    except:
+        return {'code': 0, 'data': None, 'msg': 'delete fail'}
+
+
+@app.get('/api/groupList/read')
+async def read_groupList(gid: str=Query(...),
+                         db=Depends(mongo_connector)):
+    model = db.group_news
+    data = model.find({'group_id': gid}, {'stock_id':1, 'stock_nickname': 1})
+    queryset = list()
+    async for d in data:
+        string = f'''<tr>
+                <td>{ d["stock_id"] }</td>
+                <td>{ d["stock_nickname"] }</td>
+                <td>
+                    <button class="btn-danger" gid="{ gid }" pk="{ d["stock_id"] }">刪 除
+                    </button>
+                </td>
+            </tr>'''
+        queryset.append(string)
+    query_html = '\n'.join(queryset)
+    return {'code':1, 'data': query_html, 'msg': 'success'}
+
+
 @app.get('/groups/index')
 async def groups_page(request: Request,
                       db=Depends(mongo_connector)):
@@ -151,6 +225,7 @@ async def groups_page(request: Request,
 async def add_groupList(body: GroupListBody,
                         db=Depends(mongo_connector)):
     name_list = list()
+    print(body.groups)
     try:
         for g in body.groups:
             item = {
@@ -158,6 +233,7 @@ async def add_groupList(body: GroupListBody,
                 'stock_nickname': body.stock_nickname,
                 'group_id': g['uid']
             }
+            print(item)
             await db.group_news.update_one({'group_id': g['uid'], 'stock_id': body.stock_id},
                                            {'$set': item},
                                            upsert=True)
@@ -165,7 +241,7 @@ async def add_groupList(body: GroupListBody,
             name_list.append(g['title'])
 
             msg = f'股票代號 {body.stock_id} 已加入清單{"、".join(name_list)}'
-            return {'code': 1, 'data': None, 'msg': msg}
+        return {'code': 1, 'data': None, 'msg': msg}
     except Exception as e:
         print('add groupList error', e)
         return {'code': 0, 'data': None, 'msg': '系統錯誤'}

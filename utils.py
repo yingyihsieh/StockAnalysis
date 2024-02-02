@@ -103,7 +103,7 @@ def markLine(t, x, y):
         Line()
         .add_xaxis(x)
         .add_yaxis(
-            "人數",
+            "數量",
             y,
             markpoint_opts=opts.MarkPointOpts(data=[opts.MarkPointItem(type_="min")]),
         )
@@ -112,3 +112,26 @@ def markLine(t, x, y):
                          datazoom_opts=opts.DataZoomOpts(range_start=0, range_end=100), )
     )
     return ml
+
+
+def HolderLine(title, x, y1, y2, y1_name, y2_name):
+    c = (
+        Line()
+        .add_xaxis(x)
+        .add_yaxis(
+            y1_name,
+            y1,
+            markline_opts=opts.MarkLineOpts(data=[opts.MarkLineItem(type_="average")]),
+            color='red',
+            linestyle_opts=opts.LineStyleOpts(width=5)
+        )
+        .add_yaxis(
+            y2_name,
+            y2,
+            markline_opts=opts.MarkLineOpts(data=[opts.MarkLineItem(type_="average")]),
+            linestyle_opts=opts.LineStyleOpts(width=5),
+            color='blue',
+        )
+        .set_global_opts(title_opts=opts.TitleOpts(title=""))
+    )
+    return c

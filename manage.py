@@ -12,7 +12,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from database import mongo_connector, redis_cache
-from utils import tsFormat, stockChart, BadException, ForbiddenException, markLine, message_generator
+from utils import tsFormat, stockChart, BadException
+from utils import  HolderLine, markLine, message_generator, ForbiddenException
 from serialize import CompanyModel, GroupBody, GroupListBody, NewsTaskBody, NoteBody, EPSBody
 from settings import msg_content
 from sse_starlette.sse import EventSourceResponse
@@ -123,19 +124,7 @@ async def groupList_del(sid: str=Query(...),
     try:
         model = db.group_news
         await model.delete_one({'stock_id': sid, 'group_id': gid})
-        # data = model.find({'group_id': gid}, {'stock_id':1, 'stock_nickname': 1})
-        # queryset = list()
-        # async for d in data:
-        #     string = f'''<tr>
-        #             <td>{ d["stock_id"] }</td>
-        #             <td>{ d["stock_nickname"] }</td>
-        #             <td>
-        #                 <button class="btn-danger" gid="{ gid }" pk="{ d["stock_id"] }">刪 除
-        #                 </button>
-        #             </td>
-        #         </tr>'''
-        #     queryset.append(string)
-        # query_html = '\n'.join(queryset)
+
         return {'code': 1, 'data': None, 'msg': 'delete success'}
     except:
         return {'code': 0, 'data': None, 'msg': 'delete fail'}
@@ -396,6 +385,24 @@ async def trends_news(request:Request,
     )
 
 
+@app.get('/holder/{stock_id}')
+async def get_holderData(stock_id: str = Path(..., pattern='\d+'),
+                         db=Depends(mongo_connector)):
+    print(stock_id)
+    data = db.holder.find({'stock_id': stock_id}, {'_id': 0}).sort([('date', 1)])
+    x_data, y1_data, y2_data = list(), list(), list()
+    async for d in data:
+        print(d)
+        x_data.append(d['date'])
+        y1_data.append(d['holder400'])
+        y2_data.append(d['holder1000'])
+    print(x_data)
+    print(y1_data)
+    print(y2_data)
+    chart = HolderLine(title='持股人趨勢', x=x_data, y1=y1_data, y2=y2_data, y1_name='400張%', y2_name='1000張%')
+    return chart.dump_options_with_quotes()
+
+
 @app.get('/img/{stock_id}')
 async def get_img(
         stock_id: str = Path(..., pattern='\d+'),
@@ -636,4 +643,4 @@ async def retrive_note(stock_id: str=Query(...),
 
 
 if __name__ == '__main__':
-    uvicorn.run('manage:app', host='0.0.0.0', port=5000, reload=True)
+    uvicorn.run('manage:app', host='0.0.0.0', port=5001, reload=True)

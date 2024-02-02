@@ -5,8 +5,12 @@
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid">
+<div class="container">
     <div id="chart"  style="width:960px; height:540px;">
+
+    </div>
+
+    <div id="chart2"  style="width:960px; height:540px;">
 
     </div>
 
@@ -18,10 +22,11 @@
 {% block js %}
 <script>
     var cur_chart = echarts.init(document.getElementById('chart'), 'white', {renderer: 'canvas'});
-
+    var cur_chart2 = echarts.init(document.getElementById('chart2'), 'white', {renderer: 'canvas'});
     $(
         function () {
             fetchChart();
+            fetchChart2();
         }
     );
 
@@ -33,6 +38,18 @@
             dataType: 'json',
             success: function (result) {
                 cur_chart.setOption(JSON.parse(result));
+            }
+        });
+    }
+
+    function fetchChart2() {
+
+        $.ajax({
+            type: "GET",
+            url: "/holder/{{stock_id}}",
+            dataType: 'json',
+            success: function (result) {
+                cur_chart2.setOption(JSON.parse(result));
             }
         });
     }

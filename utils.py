@@ -101,7 +101,7 @@ def stockChart(date_arr, jer_min, jer_max, jfm, jfx, differset, joboffs, emps):
 def markLine(t, x, y):
     ml = (
         Line()
-        .add_xaxis(x)
+        .add_xaxis(xaxis_data=x)
         .add_yaxis(
             "數量",
             y,
@@ -117,21 +117,31 @@ def markLine(t, x, y):
 def HolderLine(title, x, y1, y2, y1_name, y2_name):
     c = (
         Line()
-        .add_xaxis(x)
+        .add_xaxis(xaxis_data=x)
         .add_yaxis(
             y1_name,
             y1,
             markline_opts=opts.MarkLineOpts(data=[opts.MarkLineItem(type_="average")]),
+            markpoint_opts=opts.MarkPointOpts(
+                data=[opts.MarkPointItem(name="自定义标记点", coord=[x[-1], y1[-1]], value=y1[-1])]
+            ),
             color='red',
-            linestyle_opts=opts.LineStyleOpts(width=5)
+            linestyle_opts=opts.LineStyleOpts(width=8)
         )
         .add_yaxis(
             y2_name,
             y2,
             markline_opts=opts.MarkLineOpts(data=[opts.MarkLineItem(type_="average")]),
-            linestyle_opts=opts.LineStyleOpts(width=5),
+            markpoint_opts=opts.MarkPointOpts(
+                data=[opts.MarkPointItem(name="自定义标记点", coord=[x[-1], y2[-1]], value=y2[-1])]
+            ),
+            linestyle_opts=opts.LineStyleOpts(width=8),
             color='blue',
         )
-        .set_global_opts(title_opts=opts.TitleOpts(title=""))
+        .set_global_opts(title_opts=opts.TitleOpts(title=""),
+                         tooltip_opts=opts.TooltipOpts(trigger="axis"),
+                         datazoom_opts=opts.DataZoomOpts(range_start=0, range_end=100),
+                         xaxis_opts=opts.AxisOpts(axislabel_opts=opts.LabelOpts(rotate=-15))
+                         )
     )
     return c

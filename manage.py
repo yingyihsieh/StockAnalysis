@@ -396,9 +396,9 @@ async def get_holderData(stock_id: str = Path(..., pattern='\d+'),
         x_data.append(d['date'])
         y1_data.append(d['holder400'])
         y2_data.append(d['holder1000'])
-    print(x_data)
-    print(y1_data)
-    print(y2_data)
+    print(len(x_data))
+    print(len(y1_data))
+    print(len(y2_data))
     chart = HolderLine(title='持股人趨勢', x=x_data, y1=y1_data, y2=y2_data, y1_name='400張%', y2_name='1000張%')
     return chart.dump_options_with_quotes()
 

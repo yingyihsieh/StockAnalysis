@@ -660,7 +660,7 @@ async def income_sort(request: Request,
         'yoy': q['yoy-1'],
         'mom': q['mom-1'],
         'updated': q.get('updated'),
-    } async for q in queryset]
+    } async for q in queryset if q['stock_id'] not in ['0050', '0056', '00878']]
 
     return templates.TemplateResponse(
         'income.html',

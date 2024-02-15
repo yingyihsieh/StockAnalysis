@@ -1,0 +1,165 @@
+{% extends 'layout.html' %}
+
+{% block pagetitle %}
+    <title>文穎數據分析系統-公司列表</title>
+{% endblock %}
+
+{% block search %}
+    <form class="navbar-form navbar-left">
+        <div class="form-group">
+            <input type="text" class="form-control" placeholder="請輸入代號" name="stock_id">
+        </div>
+        <button type="submit" class="btn btn-default">搜 尋</button>
+    </form>
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+
+        <div class="panel panel-default" style="margin-bottom: 10px">
+            <!-- Default panel contents -->
+
+            <div class="panel-heading">
+                <span class="glyphicon glyphicon-list" aria-hidden="true"></span>
+                營收列表
+            </div>
+
+            <!-- Table -->
+            <table class="table table-bordered">
+                <thead>
+                <tr>
+                    <th>名稱</th>
+                    <th>代號</th>
+                    <th>年營收</th>
+                    <th>月營收</th>
+                    <th>時間</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for obj in data %}
+                    <tr>
+                        <th scope="row">{{ obj.nickname }}</th>
+                        <td>{{ obj.stock_id }}</td>
+                        <td>{{ obj.yoy }}</td>
+                        <td>{{ obj.mom }}</td>
+                        <td>{{ obj.updated }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+
+        <div style="text-align: center">
+            <ul class="pagination">
+                {% if previous %}
+                    <li>
+                        <a href="{{ url_for('income_sort') }}?page={{ cur_page - 1 }}&stock_id={{ sid }}"
+                           aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="disabled">
+                        <a href="#" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                {% endif %}
+
+                {% if total_page <= 5 %}
+                    {% for i in range(1, total_page + 1) %}
+                        {% if cur_page == i %}
+                            <li class="active"><a href="#">{{ i }}</a></li>
+                        {% else %}
+                            <li><a href="
+                                    {{ url_for('income_sort') }}{{ '?page=' }}{{ i }}&stock_id={{ sid }}">{{ i }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                {% else %}
+                    {% if cur_page >= 3 and total_page - cur_page >= 2 %}
+                        <li><a href="
+
+
+
+
+
+                                {{ url_for('income_sort') }}{{ '?page=' }}{{ cur_page - 2 }}&stock_id={{ sid }}">{{ cur_page-2 }}</a>
+                        </li>
+                        <li><a href="
+
+
+
+
+
+                                {{ url_for('income_sort') }}{{ '?page=' }}{{ cur_page - 1 }}&stock_id={{ sid }}">{{ cur_page-1 }}</a>
+                        </li>
+                        <li class="active"><a href="#">{{ cur_page }}</a></li>
+                        <li><a href="
+
+
+                                {{ url_for('income_sort') }}{{ '?page=' }}{{ cur_page + 1 }}&stock_id={{ sid }}">
+                            {{ cur_page + 1 }}</a>
+                        </li>
+                        <li><a href="
+
+
+                                {{ url_for('income_sort') }}{{ '?page=' }}{{ cur_page + 2 }}&stock_id={{ sid }}">
+                            {{ cur_page + 2 }}</a>
+                        </li>
+                    {% elif cur_page < 3 %}
+                        {% for i in range(1, 6) %}
+                            {% if cur_page == i %}
+                                <li class="active"><a href="#">{{ i }}</a></li>
+                            {% else %}
+                                <li><a href="
+
+
+
+
+
+                                        {{ url_for('income_sort') }}{{ '?page=' }}{{ i }}&stock_id={{ sid }}">{{ i }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                    {% elif total_page - cur_page < 2 %}
+                        {% for i in range(total_page-4, total_page + 1) %}
+                            {% if data.page == i %}
+                                <li class="active"><a href="#">{{ i }}</a></li>
+                            {% else %}
+                                <li><a href="
+
+
+
+
+
+                                        {{ url_for('income_sort') }}{{ '?page=' }}{{ i }}&stock_id={{ sid }}">{{ i }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                {% endif %}
+                {% if next %}
+                    <li>
+                        <a href="{{ url_for('income_sort') }}?page={{ cur_page + 1 }}&stock_id={{ sid }}"
+                           aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="disabled">
+                        <a href="#" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block js %}
+
+{% endblock %}

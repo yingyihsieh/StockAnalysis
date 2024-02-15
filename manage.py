@@ -640,7 +640,40 @@ async def retrive_note(stock_id: str=Query(...),
         return {'code': 0, 'data': '', 'msg': 'Note fail!'}
 
 
+@app.get('/income/latest')
+async def income_sort(request: Request,
+                      stock_id: str = Query(default=''),
+                      page: int = Query(default=1),
+                      size: int = Query(default=100),
+                      db=Depends(mongo_connector)):
+    filter = {'stock_id': {'$in': stock_id.split(',')}} if stock_id else dict()
+    model = db.company2
+    total = await model.count_documents(filter)
+    total_page, left = divmod(total, size)
+    total_page = total_page if not left else total_page + 1
+    queryset = model.find(filter, {'_id': 0, 'nickname': 1, 'stock_id': 1, 'yoy-1': 1, 'mom-1': 1, 'updated': 1}).sort([('updated', -1), ('yoy-1', -1)]).skip(
+        (page - 1) * size).limit(size)
 
+    dataset = [{
+        'nickname': q['nickname'],
+        'stock_id': q['stock_id'],
+        'yoy': q['yoy-1'],
+        'mom': q['mom-1'],
+        'updated': q.get('updated'),
+    } async for q in queryset]
+
+    return templates.TemplateResponse(
+        'income.html',
+        {
+            'request': request,
+            'data': dataset,
+            'cur_page': page,
+            'total_page': total_page,
+            'previous': False if page == 1 else True,
+            'next': False if page == total_page else True,
+            'sid': stock_id
+        },
+    )
 
 if __name__ == '__main__':
     uvicorn.run('manage:app', host='0.0.0.0', port=5001, reload=True)

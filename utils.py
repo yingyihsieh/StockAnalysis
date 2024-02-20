@@ -123,9 +123,9 @@ def HolderLine(title, x, y1, y2, y1_name, y2_name):
             y1,
             markline_opts=opts.MarkLineOpts(data=[opts.MarkLineItem(type_="average")]),
             markpoint_opts=opts.MarkPointOpts(
-                data=[opts.MarkPointItem(name="自定义标记点", coord=[x[-1], y1[-1]], value=y1[-1])]
+                data=[opts.MarkPointItem(name="400張", coord=[x[-1], y1[-1]], value=y1[-1])]
             ),
-            color='red',
+            color='blue',
             linestyle_opts=opts.LineStyleOpts(width=8)
         )
         .add_yaxis(
@@ -133,10 +133,10 @@ def HolderLine(title, x, y1, y2, y1_name, y2_name):
             y2,
             markline_opts=opts.MarkLineOpts(data=[opts.MarkLineItem(type_="average")]),
             markpoint_opts=opts.MarkPointOpts(
-                data=[opts.MarkPointItem(name="自定义标记点", coord=[x[-1], y2[-1]], value=y2[-1])]
+                data=[opts.MarkPointItem(name="1000張", coord=[x[-1], y2[-1]], value=y2[-1])]
             ),
             linestyle_opts=opts.LineStyleOpts(width=8),
-            color='blue',
+            color='red',
         )
         .set_global_opts(title_opts=opts.TitleOpts(title=""),
                          tooltip_opts=opts.TooltipOpts(trigger="axis"),

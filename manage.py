@@ -13,11 +13,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from database import mongo_connector, redis_cache
 from utils import tsFormat, stockChart, BadException
-from utils import  HolderLine, markLine, message_generator, ForbiddenException
+from utils import HolderLine, markLine, message_generator, ForbiddenException
 from serialize import CompanyModel, GroupBody, GroupListBody, NewsTaskBody, NoteBody, EPSBody
 from settings import msg_content
 from sse_starlette.sse import EventSourceResponse
-
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -76,8 +75,6 @@ async def root(request: Request):
 
 @app.get('/news_24hr')
 async def news_in_time(db=Depends(mongo_connector)):
-
-
     # temp_content = CONTENT
     # async for n in news_set:
     #     n['created'] = pendulum.from_timestamp(pendulum.parse(str(n['created']),tz='UTC').timestamp(), tz='Asia/Taipei').format('YYYY-MM-DD HH:mm:ss')
@@ -85,7 +82,7 @@ async def news_in_time(db=Depends(mongo_connector)):
     # body_html = '\n'.join(news_res)
     # table_html = TABLE.format(body=body_html)
 
-    return {'code':1, 'data':'stocks', 'msg': '成功'}
+    return {'code': 1, 'data': 'stocks', 'msg': '成功'}
 
 
 @app.get('/groups/admin')
@@ -118,8 +115,8 @@ async def groups_admin(request: Request,
 
 
 @app.delete('/api/groupList/del')
-async def groupList_del(sid: str=Query(...),
-                        gid: str=Query(...),
+async def groupList_del(sid: str = Query(...),
+                        gid: str = Query(...),
                         db=Depends(mongo_connector)):
     try:
         model = db.group_news
@@ -131,23 +128,23 @@ async def groupList_del(sid: str=Query(...),
 
 
 @app.get('/api/groupList/read')
-async def read_groupList(gid: str=Query(...),
+async def read_groupList(gid: str = Query(...),
                          db=Depends(mongo_connector)):
     model = db.group_news
-    data = model.find({'group_id': gid}, {'stock_id':1, 'stock_nickname': 1})
+    data = model.find({'group_id': gid}, {'stock_id': 1, 'stock_nickname': 1})
     queryset = list()
     async for d in data:
         string = f'''<tr>
-                <td>{ d["stock_id"] }</td>
-                <td>{ d["stock_nickname"] }</td>
+                <td>{d["stock_id"]}</td>
+                <td>{d["stock_nickname"]}</td>
                 <td>
-                    <button class="btn-danger" gid="{ gid }" pk="{ d["stock_id"] }">刪 除
+                    <button class="btn-danger" gid="{gid}" pk="{d["stock_id"]}">刪 除
                     </button>
                 </td>
             </tr>'''
         queryset.append(string)
     query_html = '\n'.join(queryset)
-    return {'code':1, 'data': query_html, 'msg': 'success'}
+    return {'code': 1, 'data': query_html, 'msg': 'success'}
 
 
 @app.get('/groups/index')
@@ -192,7 +189,8 @@ async def groups_page(request: Request,
         for s in list_set:
             g['news_detail'] += news_map.get(s, [])
 
-    nfsf_gen = db.nfsf.find({'created': {'$gte': pendulum.now(tz='Asia/Taipei').add(hours=-24)}}, {'_id': 0}).sort([('_id', -1)])
+    nfsf_gen = db.nfsf.find({'created': {'$gte': pendulum.now(tz='Asia/Taipei').add(hours=-24)}}, {'_id': 0}).sort(
+        [('_id', -1)])
     nfsf_set = [n async for n in nfsf_gen]
 
     cnsf_gen = db.cnsf.find({'created': {'$gte': pendulum.now(tz='Asia/Taipei').add(hours=-24)}}, {'_id': 0}).sort(
@@ -252,7 +250,7 @@ async def create_group(body: GroupBody,
         if not target:
             await model.insert_one(item)
         print('---', item)
-        return {'code':1, 'data': {'title': body.title, 'uid':uuid}, 'msg': '建立成功'}
+        return {'code': 1, 'data': {'title': body.title, 'uid': uuid}, 'msg': '建立成功'}
     except Exception as e:
         print(e)
         return {'code': 0, 'data': '123', 'msg': 'create fail'}
@@ -261,7 +259,7 @@ async def create_group(body: GroupBody,
 @app.get('/groups/list')
 async def get_groups(db=Depends(mongo_connector)):
     try:
-        groups = db.groups.find({},{'_id': 0})
+        groups = db.groups.find({}, {'_id': 0})
         htmlList = list()
         async for g in groups:
             html = f'''
@@ -278,7 +276,7 @@ async def get_groups(db=Depends(mongo_connector)):
 
 @app.post('/addTask')
 async def add_newsTask(body: NewsTaskBody,
-                       rdb = Depends(redis_cache)):
+                       rdb=Depends(redis_cache)):
     try:
         print(body.uid)
         await rdb.rpush('news_task', body.uid)
@@ -318,7 +316,7 @@ async def recruiment_trend(db=Depends(mongo_connector)):
     async for r in res:
         x_data.append(pendulum.parse(str(r['_id'])).add(hours=8).format('YYYY/MM/DD'))
         y_data.append(r['count'])
-    chart = markLine('招聘趨勢',x_data, y_data)
+    chart = markLine('招聘趨勢', x_data, y_data)
     return chart.dump_options_with_quotes()
 
 
@@ -341,18 +339,18 @@ async def statistic_news(stock_id: str = Query(..., pattern='\d+'),
     async for d in data:
         try:
             x_data.append(pendulum.parse(str(d['date'])).add(hours=8).format('YYYY/MM/DD'))
-            y_data.append(d.get('count',0))
+            y_data.append(d.get('count', 0))
         except:
             continue
-    chart = markLine(f'{company}-新聞趨勢',x_data, y_data)
+    chart = markLine(f'{company}-新聞趨勢', x_data, y_data)
     return chart.dump_options_with_quotes()
 
 
 @app.get('/trend/news/{stock_id}')
-async def trends_news(request:Request,
+async def trends_news(request: Request,
                       stock_id: str = Path(..., pattern='\d+'),
                       db=Depends(mongo_connector)):
-    stock = await db.company2.find_one({'stock_id': stock_id}, {'stock_id': 1,'nickname': 1})
+    stock = await db.company2.find_one({'stock_id': stock_id}, {'stock_id': 1, 'nickname': 1})
     if not stock:
         return templates.TemplateResponse(
             'news.html',
@@ -366,8 +364,8 @@ async def trends_news(request:Request,
         )
 
     news_set = db.news.find({'stock_id': stock_id,
-                           'created': pendulum.today(tz='Asia/Taipei')},
-                          {'_id':0})
+                             'created': pendulum.today(tz='Asia/Taipei')},
+                            {'_id': 0})
     news_set = [n async for n in news_set]
 
     group_gen = db.groups.find({}, {'_id': 0})
@@ -408,13 +406,14 @@ async def get_img(
         stock_id: str = Path(..., pattern='\d+'),
         db=Depends(mongo_connector)
 ):
-    stock = await db.company2.find_one({'stock_id': stock_id},{'employees':1})
+    stock = await db.company2.find_one({'stock_id': stock_id}, {'employees': 1})
     if not stock:
         return {}
-    emps = stock.get('employees',0)
+    emps = stock.get('employees', 0)
     stock_data = db.companydata.find({'stock_id': stock_id},
-                                     {'jer_max': 1, 'jer_min': 1,'jer_full_min':1, 'jer_full_max' :1, 'date': 1, 'differenceSetCount': 1,
-                                      'jobOffCount': 1,}).sort([('date', 1)])
+                                     {'jer_max': 1, 'jer_min': 1, 'jer_full_min': 1, 'jer_full_max': 1, 'date': 1,
+                                      'differenceSetCount': 1,
+                                      'jobOffCount': 1, }).sort([('date', 1)])
     jer_min = []
     jer_max = []
     jer_f_min = []
@@ -426,7 +425,7 @@ async def get_img(
         date_arr.append(str((s['date'] + datetime.timedelta(hours=8))))
         jer_max.append(s['jer_max'])
         jer_min.append(s['jer_min'])
-        jer_f_max.append(s.get('jer_full_max',0))
+        jer_f_max.append(s.get('jer_full_max', 0))
         jer_f_min.append(s.get('jer_full_min', 0))
         differ_set.append(s['differenceSetCount'])
         job_offs.append(s['jobOffCount'])
@@ -451,7 +450,6 @@ async def getStockChart(
     )
 
 
-
 @app.get('/stock/world')
 async def get_world(request: Request,
                     page: int = Query(default=1),
@@ -471,7 +469,8 @@ async def get_world(request: Request,
             'request': request,
             'data': dataset,
             'keys': ['date', 'US10Y-Y', 'US10Y-Y△%', 'USIND', 'USIND△%', 'DJIA', 'DJIA△%', 'NASDAQ', 'NASDAQ△%', 'SOX',
-                     'SOX△%', 'FI-NET', 'FI-Future-OI', 'FI-Option-OI', 'PC-R', 'US/NT', 'Top5Position',
+                     'SOX△%', 'HSIND', 'HSIND△%', 'SSEC', 'SSEC△%', 'CSI300', 'CSI300△%',
+                     'FI-NET', 'FI-Future-OI', 'FI-Option-OI', 'PC-R', 'US/NT', 'Top5Position',
                      'Top10Position', 'BullBearIND-R'],
             'previous': False if page == 1 else True,
             'next': False if page == total_page else True,
@@ -488,14 +487,14 @@ async def get_company(request: Request,
                       page: int = Query(default=1),
                       size: int = Query(default=100),
                       db=Depends(mongo_connector)):
-
-    filter = {'stock_id': {'$in':stock_id.split(',')}} if stock_id else dict()
+    filter = {'stock_id': {'$in': stock_id.split(',')}} if stock_id else dict()
     model = db.company2
     total = await model.count_documents(filter)
     print(total)
     total_page, left = divmod(total, size)
     total_page = total_page if not left else total_page + 1
-    queryset = model.find(filter, {'_id':0,'nickname': 1, 'stock_id': 1, 'employees': 1}).sort('_id', -1).skip((page - 1) * size).limit(size)
+    queryset = model.find(filter, {'_id': 0, 'nickname': 1, 'stock_id': 1, 'employees': 1}).sort('_id', -1).skip(
+        (page - 1) * size).limit(size)
     dataset = [q async for q in queryset]
     return templates.TemplateResponse(
         'company.html',
@@ -520,16 +519,16 @@ async def create_eps(body: EPSBody,
         await model.insert_one(item)
         return {'code': 1, 'data': None, 'msg': 'insert success'}
     except:
-        return {'code':0, 'data':None, 'msg': 'insert failed'}
+        return {'code': 0, 'data': None, 'msg': 'insert failed'}
 
 
 @app.get('/api/eps/{stock_id}')
 async def retrieve_company_eps(stock_id: str = Path(...),
-                           db=Depends(mongo_connector)):
+                               db=Depends(mongo_connector)):
     try:
         model = db.company2
         res = await model.find_one({'stock_id': stock_id},
-                                   {'_id':0, 'nickname': 1, 'stock_id': 1, 'employees': 1,
+                                   {'_id': 0, 'nickname': 1, 'stock_id': 1, 'employees': 1,
                                     'closePrice': 1, 'pbr': 1, 'per_w_1': 1, 'per_w_2': 1, 'per_w_3': 1,
                                     'per_w1': 1, 'per_w2': 1, 'per_w3': 1, })
         print(res)
@@ -554,7 +553,7 @@ async def retrieve_company(stock_id: str = Path(...),
     try:
         model = db.company2
         res = await model.find_one({'stock_id': stock_id},
-                                   {'_id':0, 'nickname': 1, 'stock_id': 1, 'employees': 1,
+                                   {'_id': 0, 'nickname': 1, 'stock_id': 1, 'employees': 1,
                                     'stockType': 1})
         print(len(res['stockType']))
         if not res:
@@ -619,8 +618,8 @@ async def create_note(body: NoteBody,
 
 
 @app.get('/api/note')
-async def retrive_note(stock_id: str=Query(...),
-                      db=Depends(mongo_connector)):
+async def retrive_note(stock_id: str = Query(...),
+                       db=Depends(mongo_connector)):
     try:
         target = await db.company2.find_one({'stock_id': stock_id})
         if not target:
@@ -651,7 +650,8 @@ async def income_sort(request: Request,
     total = await model.count_documents(filter)
     total_page, left = divmod(total, size)
     total_page = total_page if not left else total_page + 1
-    queryset = model.find(filter, {'_id': 0, 'nickname': 1, 'stock_id': 1, 'yoy-1': 1, 'mom-1': 1, 'updated': 1}).sort([('updated', -1), ('yoy-1', -1)]).skip(
+    queryset = model.find(filter, {'_id': 0, 'nickname': 1, 'stock_id': 1, 'yoy-1': 1, 'mom-1': 1, 'updated': 1}).sort(
+        [('updated', -1), ('yoy-1', -1)]).skip(
         (page - 1) * size).limit(size)
 
     dataset = [{
@@ -674,6 +674,7 @@ async def income_sort(request: Request,
             'sid': stock_id
         },
     )
+
 
 if __name__ == '__main__':
     uvicorn.run('manage:app', host='0.0.0.0', port=5001, reload=True)

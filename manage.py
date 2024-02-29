@@ -406,10 +406,12 @@ async def get_img(
         stock_id: str = Path(..., pattern='\d+'),
         db=Depends(mongo_connector)
 ):
-    stock = await db.company2.find_one({'stock_id': stock_id}, {'employees': 1})
+    stock = await db.company2.find_one({'stock_id': stock_id}, {'nickname': 1,'employees': 1})
     if not stock:
         return {}
+    nickname = stock.get('nickname', '')
     emps = stock.get('employees', 0)
+    global_title = f'{nickname}:{stock_id}:{emps}人'
     stock_data = db.companydata.find({'stock_id': stock_id},
                                      {'jer_max': 1, 'jer_min': 1, 'jer_full_min': 1, 'jer_full_max': 1, 'date': 1,
                                       'differenceSetCount': 1,
@@ -431,7 +433,7 @@ async def get_img(
         job_offs.append(s['jobOffCount'])
     print(date_arr)
     print(jer_min)
-    bar = stockChart(date_arr, jer_min, jer_max, jer_f_min, jer_f_max, differ_set, job_offs, emps)
+    bar = stockChart(date_arr, jer_min, jer_max, jer_f_min, jer_f_max, differ_set, job_offs, global_title)
     return bar.dump_options_with_quotes()
 
 

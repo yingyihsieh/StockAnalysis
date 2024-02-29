@@ -44,7 +44,7 @@ def tsFormat(ts):
     return pendulum.from_timestamp(ts, tz='Asia/Taipei').format('YYYY/MM/DD')
 
 
-def stockChart(date_arr, jer_min, jer_max, jfm, jfx, differset, joboffs, emps):
+def stockChart(date_arr, jer_min, jer_max, jfm, jfx, differset, joboffs, global_title):
     bar = (
         Bar(init_opts=opts.InitOpts(width='1024px', height='600px'))
         .add_xaxis(date_arr)
@@ -61,7 +61,7 @@ def stockChart(date_arr, jer_min, jer_max, jfm, jfx, differset, joboffs, emps):
                 # interval=2,
                 axislabel_opts=opts.LabelOpts(formatter="{value}"),
             ))
-        .set_global_opts(title_opts=opts.TitleOpts(title=f"員工人數: {emps}"),
+        .set_global_opts(title_opts=opts.TitleOpts(title=global_title),
                          yaxis_opts=opts.AxisOpts(
                              name="JER",
                              type_="value",

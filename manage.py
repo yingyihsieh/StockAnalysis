@@ -12,7 +12,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from database import mongo_connector, redis_cache
-from utils import tsFormat, stockChart, BadException
+from utils import tsFormat, stockChart, BadException, usd2nt_Line
 from utils import HolderLine, markLine, message_generator, ForbiddenException
 from serialize import CompanyModel, GroupBody, GroupListBody, NewsTaskBody, NoteBody, EPSBody
 from settings import msg_content
@@ -436,6 +436,16 @@ async def get_img(
     bar = stockChart(date_arr, jer_min, jer_max, jer_f_min, jer_f_max, differ_set, job_offs, global_title)
     return bar.dump_options_with_quotes()
 
+
+@app.get('/usd2nt')
+async def usd2nt_chart(db=Depends(mongo_connector)):
+    data = db.world_stock.find({},{'_id':0, 'US/NT':1, 'date':1}).sort([('date', -1)]).limit(1000)
+    x_data, y_data = list(), list()
+    async for d in data:
+        x_data.insert(0, pendulum.from_timestamp(d['date'], tz='Asia/Taipei').format('YYYYMMDD'))
+        y_data.insert(0, d)
+    line = usd2nt_Line(x=x_data, y=y_data)
+    return line.dump_options_with_quotes()
 
 @app.get('/chart/{stock_id}')
 async def getStockChart(

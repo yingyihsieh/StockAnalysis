@@ -50,6 +50,7 @@
                 </button>
 
                 <button id="taskBtn" type="button" class="btn btn-primary navbar-btn">任務群組</button>
+                <button id="worldBtn" type="button" class="btn btn-primary navbar-btn">總經更新</button>
                 {% block topbtn %}{% endblock %}
             </div>
         </div>
@@ -104,6 +105,7 @@
         clickTaskBtn();
         get_groups();
         clickMsgBtn();
+        clickWfBtn();
     })
 
     function get_groups() {
@@ -174,6 +176,29 @@
                 alert("服務出錯");
                 /*弹出其他两个参数的信息*/
             }
+        })
+    }
+
+    function clickWfBtn() {
+        $("#worldBtn").click(function () {
+            $.ajax({
+            url: "/signal/wft",
+            type: "get",
+            dataType: "JSON",
+            contentType: "application/json",
+            success: function (resp) {
+                if (!resp.code) {
+                    alert(resp.msg)
+                } else {
+                    alert('任務已開始')
+                }
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                /*弹出jqXHR对象的信息*/
+                alert("服務出錯");
+                /*弹出其他两个参数的信息*/
+            }
+        })
         })
     }
 </script>

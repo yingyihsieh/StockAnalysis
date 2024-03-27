@@ -6,7 +6,7 @@ import hashlib
 import pendulum
 import uvicorn, os, datetime
 from fastapi import FastAPI, Request, Depends
-from fastapi import Path, Query
+from fastapi import Path, Query, BackgroundTasks
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -15,8 +15,10 @@ from database import mongo_connector, redis_cache
 from utils import tsFormat, stockChart, BadException, usd2nt_Line
 from utils import HolderLine, markLine, message_generator, ForbiddenException
 from serialize import CompanyModel, GroupBody, GroupListBody, NewsTaskBody, NoteBody, EPSBody
-from settings import msg_content
+from settings import msg_content, HOST, PORT
 from sse_starlette.sse import EventSourceResponse
+from tasks import world_finance
+
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -74,7 +76,7 @@ async def root(request: Request):
 
 
 @app.get('/news_24hr')
-async def news_in_time(db=Depends(mongo_connector)):
+async def news_in_time():
     # temp_content = CONTENT
     # async for n in news_set:
     #     n['created'] = pendulum.from_timestamp(pendulum.parse(str(n['created']),tz='UTC').timestamp(), tz='Asia/Taipei').format('YYYY-MM-DD HH:mm:ss')
@@ -83,6 +85,15 @@ async def news_in_time(db=Depends(mongo_connector)):
     # table_html = TABLE.format(body=body_html)
 
     return {'code': 1, 'data': 'stocks', 'msg': '成功'}
+
+
+@app.get('/signal/wft')
+async def wft(
+        task: BackgroundTasks,
+        db=Depends(mongo_connector)
+):
+    task.add_task(world_finance)
+    return {'code': 1, 'data': None, 'msg': '成功'}
 
 
 @app.get('/groups/admin')
@@ -220,7 +231,7 @@ async def add_groupList(body: GroupListBody,
                 'stock_nickname': body.stock_nickname,
                 'group_id': g['uid']
             }
-            print(item)
+
             await db.group_news.update_one({'group_id': g['uid'], 'stock_id': body.stock_id},
                                            {'$set': item},
                                            upsert=True)
@@ -245,11 +256,11 @@ async def create_group(body: GroupBody,
             'title': body.title,
             'uid': uuid
         }
-        print(item)
+
         target = await model.find_one({'uid': uuid})
         if not target:
             await model.insert_one(item)
-        print('---', item)
+
         return {'code': 1, 'data': {'title': body.title, 'uid': uuid}, 'msg': '建立成功'}
     except Exception as e:
         print(e)
@@ -278,7 +289,6 @@ async def get_groups(db=Depends(mongo_connector)):
 async def add_newsTask(body: NewsTaskBody,
                        rdb=Depends(redis_cache)):
     try:
-        print(body.uid)
         await rdb.rpush('news_task', body.uid)
         return {'code': 1, 'data': None, 'msg': '任務已啟動'}
     except:
@@ -390,13 +400,10 @@ async def get_holderData(stock_id: str = Path(..., pattern='\d+'),
     data = db.holder.find({'stock_id': stock_id}, {'_id': 0}).sort([('date', 1)])
     x_data, y1_data, y2_data = list(), list(), list()
     async for d in data:
-        print(d)
         x_data.append(d['date'])
         y1_data.append(d['holder400'])
         y2_data.append(d['holder1000'])
-    print(len(x_data))
-    print(len(y1_data))
-    print(len(y2_data))
+
     chart = HolderLine(title='持股人趨勢', x=x_data, y1=y1_data, y2=y2_data, y1_name='400張%', y2_name='1000張%')
     return chart.dump_options_with_quotes()
 
@@ -431,8 +438,7 @@ async def get_img(
         jer_f_min.append(s.get('jer_full_min', 0))
         differ_set.append(s['differenceSetCount'])
         job_offs.append(s['jobOffCount'])
-    print(date_arr)
-    print(jer_min)
+
     bar = stockChart(date_arr, jer_min, jer_max, jer_f_min, jer_f_max, differ_set, job_offs, global_title)
     return bar.dump_options_with_quotes()
 
@@ -443,9 +449,11 @@ async def usd2nt_chart(db=Depends(mongo_connector)):
     x_data, y_data = list(), list()
     async for d in data:
         x_data.insert(0, pendulum.from_timestamp(d['date'], tz='Asia/Taipei').format('YYYYMMDD'))
-        y_data.insert(0, d)
+        y_data.insert(0, d['US/NT'])
+
     line = usd2nt_Line(x=x_data, y=y_data)
     return line.dump_options_with_quotes()
+
 
 @app.get('/chart/{stock_id}')
 async def getStockChart(
@@ -689,4 +697,4 @@ async def income_sort(request: Request,
 
 
 if __name__ == '__main__':
-    uvicorn.run('manage:app', host='0.0.0.0', port=5001, reload=True)
+    uvicorn.run('manage:app', host=HOST, port=PORT, reload=True)

@@ -164,6 +164,12 @@ def usd2nt_Line(x, y):
                           tooltip_opts=opts.TooltipOpts(trigger="axis"),
                           datazoom_opts=opts.DataZoomOpts(range_start=0, range_end=100),
                           xaxis_opts=opts.AxisOpts(axislabel_opts=opts.LabelOpts(rotate=-15))
-                          )
+                          ).extend_axis(
+            yaxis=opts.AxisOpts(
+                type_="value",
+                min_=28,
+                max_=35,
+                axislabel_opts=opts.LabelOpts(formatter="{value}"),
+            ))
     )
     return c

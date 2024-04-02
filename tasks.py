@@ -2,19 +2,14 @@
 # @Time : 2024/3/28  上午 02:34
 # @Author : Andy Hsieh
 # @Desc :
-
-
-# -*- coding: utf-8 -*-
-# @Time : 2023/12/14  下午 12:06
-# @Author : Andy Hsieh
-# @Desc :
-
+import os
 import time
 import requests
 import pendulum
 import pymongo
+import pandas as pd
 from bs4 import BeautifulSoup
-from settings import PORT
+from settings import PORT, FILE_PATH
 
 
 def spider1():
@@ -197,7 +192,7 @@ def wf_notify():
 def get_model():
     client = pymongo.MongoClient('mongodb://192.168.10.67:27017')
     db = client.finance
-    return db.world_stock
+    return db
 
 
 def world_finance():
@@ -224,7 +219,8 @@ def world_finance():
     data.update(r6)
     data = {k: data[k] for k in keys}
     print('data=', data)
-    model = get_model()
+    db = get_model()
+    model = db.world_stock
     model.update_one({'date': data['date']},
                      {'$set': data},
                      upsert=True)
@@ -233,4 +229,102 @@ def world_finance():
 
 
 
+class UpdateYoY:
+    def __init__(self):
+        self.headers = {
+            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        }
+        self.url = 'https://mops.twse.com.tw/server-java/FileDownLoad'
+        self.date = pendulum.today(tz='Asia/Taipei').add(months=-1)
+        self.keys = ['sii', 'otc']
+        self.client = pymongo.MongoClient('mongodb://192.168.10.67:27017')
+        self.db = self.client.finance
+        self.model = self.db.company2
 
+    def date_format(self):
+        cy = str(self.date.year - 1911)
+        cm = f'{self.date.month}'
+        wy = str(self.date.year)
+        wm = f'{self.date.month}' if self.date.month > 9 else f'0{self.date.month}'
+        return cy, cm, wy, wm
+
+    def spider(self, year, month, index, file):
+        form = {
+            'step': '9',
+            'functionName': 'show_file2',
+            'filePath': f'/t21/{index}/',
+            'fileName': f't21sc03_{year}_{month}.csv'
+        }
+        resp = requests.post(url=self.url, headers=self.headers, data=form)
+        data = resp.content
+        print(file)
+        with open(file, 'wb') as f:
+            f.write(data)
+
+
+    def parse(self, file, west_yr, west_mn):
+        df = pd.read_csv(file)
+        data = df.to_dict(orient='records')
+
+        reason_map = {str(d['公司代號']): {
+            'remark': d['備註'].replace('-', ''),
+            'mom': round(d["營業收入-上月比較增減(%)"], 2),
+            'yoy': round(d["營業收入-去年同月增減(%)"], 2)
+        } for d in data}
+        for s in reason_map:
+
+            item = self.model.find_one({'stock_id': s}, {'_id': 1, 'stock_id': 1, 'updated': 1,
+                                                         'yoy-1': 1, 'yoy-2': 1, 'yoy-3': 1,
+                                                         'yoy-4': 1, 'yoy-5': 1, 'yoy-6': 1,
+                                                         'mom-1': 1, 'mom-2': 1, 'mom-3': 1,
+                                                         'mom-4': 1, 'mom-5': 1, 'mom-6': 1})
+
+            time.sleep(0.5)
+            if not item:
+                continue
+            if item['updated'] == f'{west_yr}{west_mn}':
+                continue
+            print('updated==', s)
+            self.model.update_one({'stock_id': s},
+                                  {'$set': {
+                                 'remark': f'{west_yr}/{west_mn} ' + reason_map[s]['remark'],
+                                 'updated': f'{west_yr}{west_mn}',
+                                 'yoy-1': reason_map[s]['yoy'],
+                                 'yoy-2': item['yoy-1'],
+                                 'yoy-3': item['yoy-2'],
+                                 'yoy-4': item['yoy-3'],
+                                 'yoy-5': item['yoy-4'],
+                                 'yoy-6': item['yoy-5'],
+                                 'mom-1': reason_map[s]['mom'],
+                                 'mom-2': item['mom-1'],
+                                 'mom-3': item['mom-2'],
+                                 'mom-4': item['mom-3'],
+                                 'mom-5': item['mom-4'],
+                                 'mom-6': item['mom-5']
+                             }})
+
+
+    def income_notify(self):
+        content = '營收已更新'
+        url = f'http://127.0.0.1:{PORT}/message?content={content}'
+        resp = requests.post(url=url)
+        print(resp.json())
+
+
+    def run(self):
+        cyear, cmonth, wyear, wmonth = self.date_format()
+        for k in self.keys:
+            file_path = os.path.join(FILE_PATH, f'{k}_{cyear}_{cmonth}.csv')
+            self.spider(cyear, cmonth, k, file_path)
+            time.sleep(2)
+            self.parse(file_path, wyear, wmonth)
+        self.income_notify()
+        time.sleep(1)
+        self.client.close()
+
+
+def income_task():
+    if not os.path.exists(FILE_PATH):
+        os.mkdir(FILE_PATH)
+    obj = UpdateYoY()
+    obj.run()

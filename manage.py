@@ -17,7 +17,7 @@ from utils import HolderLine, markLine, message_generator, ForbiddenException
 from serialize import CompanyModel, GroupBody, GroupListBody, NewsTaskBody, NoteBody, EPSBody
 from settings import msg_content, HOST, PORT
 from sse_starlette.sse import EventSourceResponse
-from tasks import world_finance
+from tasks import world_finance, income_task
 
 
 app = FastAPI()
@@ -90,10 +90,18 @@ async def news_in_time():
 @app.get('/signal/wft')
 async def wft(
         task: BackgroundTasks,
-        db=Depends(mongo_connector)
 ):
     task.add_task(world_finance)
     return {'code': 1, 'data': None, 'msg': '成功'}
+
+
+@app.get('/signal/income')
+async def wft(
+        task: BackgroundTasks,
+):
+    task.add_task(income_task)
+    return {'code': 1, 'data': None, 'msg': '成功'}
+
 
 
 @app.get('/groups/admin')

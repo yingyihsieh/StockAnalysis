@@ -14,6 +14,10 @@
 
     </div>
 
+    <div id="chart3"  style="width:960px; height:540px;">
+
+    </div>
+
 </div>
 
 {% endblock %}
@@ -23,10 +27,13 @@
 <script>
     var cur_chart = echarts.init(document.getElementById('chart'), 'white', {renderer: 'canvas'});
     var cur_chart2 = echarts.init(document.getElementById('chart2'), 'white', {renderer: 'canvas'});
+    var cur_chart3 = echarts.init(document.getElementById('chart3'), 'white', {renderer: 'canvas'});
+
     $(
         function () {
             fetchChart();
             fetchChart2();
+            fetchChart3();
         }
     );
 
@@ -53,5 +60,19 @@
             }
         });
     }
+
+    function fetchChart3() {
+
+        $.ajax({
+            type: "GET",
+            url: "/leaderholder/{{stock_id}}",
+            dataType: 'json',
+            success: function (result) {
+                console.log(result)
+                cur_chart3.setOption(JSON.parse(result));
+            }
+        });
+    }
+
 </script>
 {% endblock %}

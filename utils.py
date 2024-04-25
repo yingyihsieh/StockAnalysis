@@ -138,7 +138,50 @@ def HolderLine(title, x, y1, y2, y1_name, y2_name):
             linestyle_opts=opts.LineStyleOpts(width=8),
             color='red',
         )
-        .set_global_opts(title_opts=opts.TitleOpts(title=""),
+        .set_global_opts(title_opts=opts.TitleOpts(title=title),
+                         tooltip_opts=opts.TooltipOpts(trigger="axis"),
+                         datazoom_opts=opts.DataZoomOpts(range_start=0, range_end=100),
+                         xaxis_opts=opts.AxisOpts(axislabel_opts=opts.LabelOpts(rotate=-15))
+                         )
+    )
+    return c
+
+
+def TopHolderLine(title, x, y1, y2, y3, y1_name, y2_name, y3_name):
+    c = (
+        Line()
+        .add_xaxis(xaxis_data=x)
+        .add_yaxis(
+            y1_name,
+            y1,
+            markline_opts=opts.MarkLineOpts(data=[opts.MarkLineItem(type_="average")]),
+            markpoint_opts=opts.MarkPointOpts(
+                data=[opts.MarkPointItem(name="董監", coord=[x[-1], y1[-1]], value=y1[-1])]
+            ),
+            color='blue',
+            linestyle_opts=opts.LineStyleOpts(width=6)
+        )
+        .add_yaxis(
+            y2_name,
+            y2,
+            markline_opts=opts.MarkLineOpts(data=[opts.MarkLineItem(type_="average")]),
+            markpoint_opts=opts.MarkPointOpts(
+                data=[opts.MarkPointItem(name="經理", coord=[x[-1], y2[-1]], value=y2[-1])]
+            ),
+            linestyle_opts=opts.LineStyleOpts(width=6),
+            color='green',
+        )
+        .add_yaxis(
+            y3_name,
+            y3,
+            markline_opts=opts.MarkLineOpts(data=[opts.MarkLineItem(type_="average")]),
+            markpoint_opts=opts.MarkPointOpts(
+                data=[opts.MarkPointItem(name="大股東", coord=[x[-1], y3[-1]], value=y3[-1])]
+            ),
+            linestyle_opts=opts.LineStyleOpts(width=6),
+            color='red',
+        )
+        .set_global_opts(title_opts=opts.TitleOpts(title=title),
                          tooltip_opts=opts.TooltipOpts(trigger="axis"),
                          datazoom_opts=opts.DataZoomOpts(range_start=0, range_end=100),
                          xaxis_opts=opts.AxisOpts(axislabel_opts=opts.LabelOpts(rotate=-15))

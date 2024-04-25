@@ -5,6 +5,7 @@
 import hashlib
 import pendulum
 import uvicorn, os, datetime
+from decimal import Decimal
 from fastapi import FastAPI, Request, Depends
 from fastapi import Path, Query, BackgroundTasks
 from fastapi.templating import Jinja2Templates
@@ -12,8 +13,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from database import mongo_connector, redis_cache
-from utils import tsFormat, stockChart, BadException, usd2nt_Line
-from utils import HolderLine, markLine, message_generator, ForbiddenException
+from utils import *
 from serialize import CompanyModel, GroupBody, GroupListBody, NewsTaskBody, NoteBody, EPSBody
 from settings import msg_content, HOST, PORT
 from sse_starlette.sse import EventSourceResponse
@@ -400,6 +400,27 @@ async def trends_news(request: Request,
         },
     )
 
+@app.get('/leaderholder/{stock_id}')
+async def get_leaferHolder(stock_id: str = Path(..., pattern='\d+'),
+                           db=Depends(mongo_connector)):
+
+    max_date = int(pendulum.today(tz='Asia/Taipei').add(months=-1).format('YYYYMM'))
+    min_date = int(pendulum.today(tz='Asia/Taipei').add(years=-1).add(months=-1).format('YYYYMM'))
+    data = db.managerHold.find({'stock_id': stock_id,'date': {'$gte': min_date, '$lte': max_date}},
+                               {'_id': 0}).sort([('date', 1)])
+    x_list, y1_list, y2_list, y3_list = list(), list(), list(), list()
+    async for r in data:
+        x_list.append(str(r['date']))
+        y1_list.append(Decimal(str(round(r.get('ceo_hold', 0) / r['publish'], 4)))*100)
+        y2_list.append(Decimal(str(round(r.get('manager_hold', 0) / r['publish'], 4)))*100)
+        y3_list.append(Decimal(str(round(r.get('topStocker_hold', 0) / r['publish'], 4)))*100)
+    print(x_list)
+    print(y1_list)
+    print(y2_list)
+    print(y3_list)
+    chart = TopHolderLine(title='董監經理大股持股趨勢', x=x_list, y1=y1_list, y2=y2_list, y3=y3_list, y1_name='董監%', y2_name='經理%', y3_name='大股東%')
+    print(chart)
+    return chart.dump_options_with_quotes()
 
 @app.get('/holder/{stock_id}')
 async def get_holderData(stock_id: str = Path(..., pattern='\d+'),

@@ -147,7 +147,7 @@ def HolderLine(title, x, y1, y2, y1_name, y2_name):
     return c
 
 
-def TopHolderLine(title, x, y1, y2, y3, y1_name, y2_name, y3_name):
+def TopHolderLine(title, x, y1, y2, y3, y4, y1_name, y2_name, y3_name, y4_name):
     c = (
         Line()
         .add_xaxis(xaxis_data=x)
@@ -156,9 +156,9 @@ def TopHolderLine(title, x, y1, y2, y3, y1_name, y2_name, y3_name):
             y1,
             markline_opts=opts.MarkLineOpts(data=[opts.MarkLineItem(type_="average")]),
             markpoint_opts=opts.MarkPointOpts(
-                data=[opts.MarkPointItem(name="董監", coord=[x[-1], y1[-1]], value=y1[-1])]
+                data=[opts.MarkPointItem(name="董監HR", coord=[x[-1], y1[-1]], value=y1[-1])]
             ),
-            color='blue',
+            color='red',
             linestyle_opts=opts.LineStyleOpts(width=6)
         )
         .add_yaxis(
@@ -166,7 +166,7 @@ def TopHolderLine(title, x, y1, y2, y3, y1_name, y2_name, y3_name):
             y2,
             markline_opts=opts.MarkLineOpts(data=[opts.MarkLineItem(type_="average")]),
             markpoint_opts=opts.MarkPointOpts(
-                data=[opts.MarkPointItem(name="經理", coord=[x[-1], y2[-1]], value=y2[-1])]
+                data=[opts.MarkPointItem(name="經理HR", coord=[x[-1], y2[-1]], value=y2[-1])]
             ),
             linestyle_opts=opts.LineStyleOpts(width=6),
             color='green',
@@ -176,10 +176,20 @@ def TopHolderLine(title, x, y1, y2, y3, y1_name, y2_name, y3_name):
             y3,
             markline_opts=opts.MarkLineOpts(data=[opts.MarkLineItem(type_="average")]),
             markpoint_opts=opts.MarkPointOpts(
-                data=[opts.MarkPointItem(name="大股東", coord=[x[-1], y3[-1]], value=y3[-1])]
+                data=[opts.MarkPointItem(name="董監PR", coord=[x[-1], y3[-1]], value=y3[-1])]
             ),
             linestyle_opts=opts.LineStyleOpts(width=6),
-            color='red',
+            color='blue',
+        )
+        .add_yaxis(
+            y4_name,
+            y4,
+            markline_opts=opts.MarkLineOpts(data=[opts.MarkLineItem(type_="average")]),
+            markpoint_opts=opts.MarkPointOpts(
+                data=[opts.MarkPointItem(name="經理PR", coord=[x[-1], y4[-1]], value=y4[-1])]
+            ),
+            linestyle_opts=opts.LineStyleOpts(width=6),
+            color='orange',
         )
         .set_global_opts(title_opts=opts.TitleOpts(title=title),
                          tooltip_opts=opts.TooltipOpts(trigger="axis"),

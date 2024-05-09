@@ -400,27 +400,26 @@ async def trends_news(request: Request,
         },
     )
 
+
 @app.get('/leaderholder/{stock_id}')
 async def get_leaferHolder(stock_id: str = Path(..., pattern='\d+'),
                            db=Depends(mongo_connector)):
 
     max_date = int(pendulum.today(tz='Asia/Taipei').add(months=-1).format('YYYYMM'))
     min_date = int(pendulum.today(tz='Asia/Taipei').add(years=-1).add(months=-1).format('YYYYMM'))
-    data = db.managerHold.find({'stock_id': stock_id,'date': {'$gte': min_date, '$lte': max_date}},
+    data = db.topHolder.find({'stock_id': stock_id,'date': {'$gte': min_date, '$lte': max_date}},
                                {'_id': 0}).sort([('date', 1)])
-    x_list, y1_list, y2_list, y3_list = list(), list(), list(), list()
+    x_list, y1_list, y2_list, y3_list, y4_list = list(), list(), list(), list(), list()
     async for r in data:
         x_list.append(str(r['date']))
-        y1_list.append(Decimal(str(round(r.get('ceo_hold', 0) / r['publish'], 4)))*100)
-        y2_list.append(Decimal(str(round(r.get('manager_hold', 0) / r['publish'], 4)))*100)
-        y3_list.append(Decimal(str(round(r.get('topStocker_hold', 0) / r['publish'], 4)))*100)
-    print(x_list)
-    print(y1_list)
-    print(y2_list)
-    print(y3_list)
-    chart = TopHolderLine(title='董監經理大股持股趨勢', x=x_list, y1=y1_list, y2=y2_list, y3=y3_list, y1_name='董監%', y2_name='經理%', y3_name='大股東%')
-    print(chart)
+        y1_list.append(Decimal(str(r.get('directors_hr', 0))))
+        y2_list.append(Decimal(str(r.get('managers_hr', 0))))
+        y3_list.append(Decimal(str(r.get('directors_pr', 0))))
+        y4_list.append(Decimal(str(r.get('managers_pr', 0))))
+
+    chart = TopHolderLine(title='董監經理人持股趨勢', x=x_list, y1=y1_list, y2=y2_list, y3=y3_list, y4=y4_list, y1_name='董監HR', y2_name='經理HR', y3_name='董監PR', y4_name='經理PR')
     return chart.dump_options_with_quotes()
+
 
 @app.get('/holder/{stock_id}')
 async def get_holderData(stock_id: str = Path(..., pattern='\d+'),

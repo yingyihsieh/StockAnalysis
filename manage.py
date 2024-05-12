@@ -412,10 +412,10 @@ async def get_leaferHolder(stock_id: str = Path(..., pattern='\d+'),
     x_list, y1_list, y2_list, y3_list, y4_list = list(), list(), list(), list(), list()
     async for r in data:
         x_list.append(str(r['date']))
-        y1_list.append(Decimal(str(r.get('directors_hr', 0))))
-        y2_list.append(Decimal(str(r.get('managers_hr', 0))))
-        y3_list.append(Decimal(str(r.get('directors_pr', 0))))
-        y4_list.append(Decimal(str(r.get('managers_pr', 0))))
+        y1_list.append(Decimal(str(round(r.get('directors_hr', 0), 2))))
+        y2_list.append(Decimal(str(round(r.get('managers_hr', 0), 2))))
+        y3_list.append(Decimal(str(round(r.get('directors_pr', 0), 2))))
+        y4_list.append(Decimal(str(round(r.get('managers_pr', 0), 2))))
 
     chart = TopHolderLine(title='董監經理人持股趨勢', x=x_list, y1=y1_list, y2=y2_list, y3=y3_list, y4=y4_list, y1_name='董監HR', y2_name='經理HR', y3_name='董監PR', y4_name='經理PR')
     return chart.dump_options_with_quotes()

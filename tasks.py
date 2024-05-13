@@ -264,12 +264,13 @@ class UpdateYoY:
 
     def parse(self, file, west_yr, west_mn):
         df = pd.read_csv(file)
+        df = df.fillna('0')
         data = df.to_dict(orient='records')
 
         reason_map = {str(d['公司代號']): {
             'remark': d['備註'].replace('-', ''),
-            'mom': round(d["營業收入-上月比較增減(%)"], 2),
-            'yoy': round(d["營業收入-去年同月增減(%)"], 2)
+            'mom': f'{round(d["營業收入-上月比較增減(%)"], 2)}%',
+            'yoy': f'{round(d["營業收入-去年同月增減(%)"], 2)}%'
         } for d in data}
         for s in reason_map:
 

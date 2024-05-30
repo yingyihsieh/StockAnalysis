@@ -1,0 +1,139 @@
+{% extends 'demo.html' %}
+
+
+{% block mainContent %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="btn-group btn-group-lg">
+            <div class="dropdown">
+                <button class="btn btn-lg btn-primary dropdown-toggle" type="button" data-toggle="dropdown">TW
+                    <span class="caret"></span></button>
+                <ul class="dropdown-menu">
+                    {% for t in tw_groups %}
+                    <li><a id="{{t.uid}}" class="tw-group-btn" href="#" onclick="clickTwGroup(this)">{{t.title}}</a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        <div class="btn-group btn-group-lg">
+            <div class="dropdown">
+                <button class="btn btn-lg btn-primary dropdown-toggle" type="button" data-toggle="dropdown">CN
+                    <span class="caret"></span></button>
+                <ul class="dropdown-menu">
+                    {% for c in cn_groups %}
+                    <li><a id="{{c.uid}}" class="cn-group-btn" href="#" onclick="clickCnGroup(this)">{{c.title}}</a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        <div class="btn-group btn-group-lg">
+            <button type="button" class="btn btn-lg btn-primary" onclick="clickNFSF(this)">國安基金</button>
+        </div>
+        <div class="btn-group btn-group-lg">
+            <button type="button" class="btn btn-lg btn-primary" onclick="clickCNSF(this)">平準基金</button>
+        </div>
+    </div>
+</div>
+<div class="row" style="margin-left: 1px">
+    <h3>新聞列表</h3>
+    <div class="list-group news-list">
+
+    </div>
+</div>
+{% endblock %}
+
+{% block jsContent %}
+<script>
+    function clickTwGroup(self) {
+        var group_id = $(self).get(0).id;
+        console.log(group_id);
+        $.ajax({
+            url: "/news/tw?group_id=" + group_id,
+            type: "get",
+            dataType: "JSON",
+            contentType: "application/json",
+            success: function (resp) {
+                if (!resp.code) {
+                    alert(resp.msg)
+                } else {
+                    $(".news-list").html(resp.data)
+                }
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                /*弹出jqXHR对象的信息*/
+                alert("服務出錯");
+                /*弹出其他两个参数的信息*/
+            }
+        })
+    }
+
+    function clickCnGroup(self) {
+        var group_id = $(self).get(0).id;
+        console.log(group_id);
+        $.ajax({
+            url: "/news/cn?group_id=" + group_id,
+            type: "get",
+            dataType: "JSON",
+            contentType: "application/json",
+            success: function (resp) {
+                if (!resp.code) {
+                    alert(resp.msg)
+                } else {
+                    $(".news-list").html(resp.data)
+                }
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                /*弹出jqXHR对象的信息*/
+                alert("服務出錯");
+                /*弹出其他两个参数的信息*/
+            }
+        })
+    }
+
+    function clickNFSF(self) {
+        var group_id = $(self).get(0).id;
+        console.log(group_id);
+        $.ajax({
+            url: "/news/nfsf",
+            type: "get",
+            dataType: "JSON",
+            contentType: "application/json",
+            success: function (resp) {
+                if (!resp.code) {
+                    alert(resp.msg)
+                } else {
+                    $(".news-list").html(resp.data)
+                }
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                /*弹出jqXHR对象的信息*/
+                alert("服務出錯");
+                /*弹出其他两个参数的信息*/
+            }
+        })
+    }
+
+    function clickCNSF(self) {
+        var group_id = $(self).get(0).id;
+        console.log(group_id);
+        $.ajax({
+            url: "/news/cnsf",
+            type: "get",
+            dataType: "JSON",
+            contentType: "application/json",
+            success: function (resp) {
+                if (!resp.code) {
+                    alert(resp.msg)
+                } else {
+                    $(".news-list").html(resp.data)
+                }
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                /*弹出jqXHR对象的信息*/
+                alert("服務出錯");
+                /*弹出其他两个参数的信息*/
+            }
+        })
+    }
+</script>
+{% endblock %}

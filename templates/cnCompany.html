@@ -1,0 +1,516 @@
+{% extends 'demo.html' %}
+
+
+{% block mainContent %}
+<!-- 搜索框 -->
+<div class="row">
+    <div class="col-md-6">
+        <form method="get" role="search">
+            <div class="input-group">
+                <input type="text" class="form-control" placeholder="請輸入股號" name="stock_id">
+                <span class="input-group-btn">
+                <button class="btn btn-default" type="submit"><span class="glyphicon glyphicon-search"></span></button>
+              </span>
+            </div>
+        </form>
+    </div>
+    <div class="col-md-6">
+        <button id="groups" class="btn btn-primary">CN群組</button>
+    </div>
+</div>
+
+<!-- 表格 -->
+<div class="table-responsive">
+    <table class="table table-striped">
+        <thead>
+        <tr>
+            <th>名稱</th>
+            <th>股號</th>
+            <th>人數</th>
+            <th>備註</th>
+            <th>操作</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for obj in data %}
+        <tr>
+            <th scope="row">{{ obj.title }}</th>
+            <td>{{ obj.stock_id }}</td>
+            <td>{{ obj.emps }}</td>
+            <td>{{ obj.remark }}</td>
+            <td>
+                <!--                    <input pk="{{ obj.stock_id }}" name="{{ obj.title }}" class="btn-xs btn-warning math-btn" type="button" value="計算">-->
+                <input pk="{{ obj.stock_id }}" name="{{ obj.title }}"
+                       class="btn-xs btn-info chart-btn"
+                       type="button" value="圖表">
+                <input pk="{{ obj.stock_id }}" name="{{ obj.title }}"
+                       class="noteList-btn btn-xs btn-warning"
+                       type="button" value="筆記">
+                <input pk="{{ obj.stock_id }}" name="{{ obj.title }}" class="btn-xs btn-success enter-group-btn"
+                                       type="button" value="加入群組">
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div style="text-align: center">
+    <ul class="pagination">
+        {% if previous %}
+        <li>
+            <a href="{{ url_for('get_cn_company') }}?page={{ cur_page - 1 }}&stock_id={{ sid }}"
+               aria-label="Previous">
+                <span aria-hidden="true">&laquo;</span>
+            </a>
+        </li>
+        {% else %}
+        <li class="disabled">
+            <a href="#" aria-label="Previous">
+                <span aria-hidden="true">&laquo;</span>
+            </a>
+        </li>
+        {% endif %}
+
+        {% if total_page <= 5 %}
+        {% for i in range(1, total_page + 1) %}
+        {% if cur_page == i %}
+        <li class="active"><a href="#">{{ i }}</a></li>
+        {% else %}
+        <li><a href="
+                                    {{ url_for('get_cn_company') }}{{ '?page=' }}{{ i }}&stock_id={{ sid }}">{{ i }}</a>
+        </li>
+        {% endif %}
+        {% endfor %}
+        {% else %}
+        {% if cur_page >= 3 and total_page - cur_page >= 2 %}
+        <li><a href="
+
+
+
+
+
+                                {{ url_for('get_cn_company') }}{{ '?page=' }}{{ cur_page - 2 }}&stock_id={{ sid }}">{{
+            cur_page-2 }}</a>
+        </li>
+        <li><a href="
+
+
+
+
+
+                                {{ url_for('get_cn_company') }}{{ '?page=' }}{{ cur_page - 1 }}&stock_id={{ sid }}">{{
+            cur_page-1 }}</a>
+        </li>
+        <li class="active"><a href="#">{{ cur_page }}</a></li>
+        <li><a href="
+
+
+                                {{ url_for('get_cn_company') }}{{ '?page=' }}{{ cur_page + 1 }}&stock_id={{ sid }}">
+            {{ cur_page + 1 }}</a>
+        </li>
+        <li><a href="
+
+
+                                {{ url_for('get_cn_company') }}{{ '?page=' }}{{ cur_page + 2 }}&stock_id={{ sid }}">
+            {{ cur_page + 2 }}</a>
+        </li>
+        {% elif cur_page < 3 %}
+        {% for i in range(1, 6) %}
+        {% if cur_page == i %}
+        <li class="active"><a href="#">{{ i }}</a></li>
+        {% else %}
+        <li><a href="
+
+
+
+
+
+                                        {{ url_for('get_cn_company') }}{{ '?page=' }}{{ i }}&stock_id={{ sid }}">{{ i
+            }}</a>
+        </li>
+        {% endif %}
+        {% endfor %}
+        {% elif total_page - cur_page < 2 %}
+        {% for i in range(total_page-4, total_page + 1) %}
+        {% if data.page == i %}
+        <li class="active"><a href="#">{{ i }}</a></li>
+        {% else %}
+        <li><a href="
+
+
+
+
+
+                                        {{ url_for('get_cn_company') }}{{ '?page=' }}{{ i }}&stock_id={{ sid }}">{{ i
+            }}</a>
+        </li>
+        {% endif %}
+        {% endfor %}
+        {% endif %}
+        {% endif %}
+        {% if next %}
+        <li>
+            <a href="{{ url_for('get_cn_company') }}?page={{ cur_page + 1 }}&stock_id={{ sid }}"
+               aria-label="Next">
+                <span aria-hidden="true">&raquo;</span>
+            </a>
+        </li>
+        {% else %}
+        <li class="disabled">
+            <a href="#" aria-label="Next">
+                <span aria-hidden="true">&raquo;</span>
+            </a>
+        </li>
+        {% endif %}
+    </ul>
+</div>
+
+
+<!-- note list model -->
+<div class="modal fade" id="noteListModal" tabindex="-1" role="dialog" aria-labelledby="noteListModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                        aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title" id="noteListModalLabel"><b>筆記Top5</b></h4>
+            </div>
+            <div class="modal-body">
+                <ul id="note-body" class="list-group">
+
+                </ul>
+
+                <div class="form-group">
+                    <label for="message">Note:</label>
+                    <textarea class="form-control" rows="5" id="message"></textarea>
+                </div>
+                <button id="note-submit" type="submit" class="btn btn-default">記 錄</button>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- 模态框 -->
+<div id="chartModal" class="modal fade" role="dialog"  tabindex="-1" aria-labelledby="chartModalLabel">
+    <div class="modal-dialog modal-lg">
+        <!-- 模态框内容 -->
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title">折线图示例</h4>
+            </div>
+            <div class="modal-body">
+                <div id="chart" style="width: 800px; height: 600px"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+
+<!-- groups model -->
+<div class="modal fade" id="groupsModal" tabindex="-1" role="dialog" aria-labelledby="groupsModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                        aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title" id="groupsModalLabel"><b>我的群組</b></h4>
+            </div>
+            <div class="modal-body">
+                <ul id="groups-body" class="list-group">
+
+                </ul>
+                <div class="form-group">
+                    <label for="newGroup">新建群組:</label>
+                    <textarea class="form-control" rows="5" id="newGroup"></textarea>
+                </div>
+                <button id="newGroup-submit" type="submit" class="btn btn-success">創 建</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- enter groups model -->
+<div class="modal fade" id="choiceGroupModal" tabindex="-1" role="dialog" aria-labelledby="choiceGroupModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                        aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title" id="choiceGroupModalLabel"><b>我的群組</b></h4>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="form-group">
+                        <label for="group-select">群组列表</label>
+                        <select class="form-control" id="group-select">
+
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="confirm-join-btn">确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{% endblock %}
+
+
+{% block jsContent %}
+<script>
+    var STOCKID;
+    var STOCK_NAME;
+    var cur_chart = echarts.init(document.getElementById('chart'), 'white', {renderer: 'canvas'});
+
+    $(function () {
+        getMyCnGroups();
+        createCnGroups();
+        EnterCnGroupBtn();
+        addToCnGroup();
+        refreshNote();
+        bindNoteListEvent();
+        saveNoteEvent();
+        clickChartEvent();
+    })
+
+    function getMyCnGroups() {
+        $("#groups").click(function () {
+            $.ajax({
+                url: '/cn/groups/list',
+                type: 'get',
+                dataType: "JSON",
+                success: function (resp) {
+                    if (!resp.code) {
+                        alert("獲取資料失敗,請重新嘗試")
+                    } else {
+                        $("#groups-body").html(resp.data);
+                        $("#groupsModal").modal("show");
+                    }
+                },
+                error: function (jqXHR, textStatus, errorThrown) {
+                    /*弹出jqXHR对象的信息*/
+                    alert("服務出錯");
+                    /*弹出其他两个参数的信息*/
+                }
+            })
+
+        })
+    }
+
+    function createCnGroups() {
+        $("#newGroup-submit").click(function () {
+            req_body = {
+                title: $("#newGroup").val(),
+            }
+            $.ajax({
+                url: "/cn/groups",
+                type: "post",
+                dataType: "JSON",
+                contentType: "application/json",
+                data: JSON.stringify(req_body),
+                success: function (resp) {
+                    if (!resp.code) {
+                        alert("獲取資料失敗,請重新嘗試")
+                    } else {
+                        alert("創建成功");
+                        html_str = '<li class="list-group-item" id="' + resp.data.uid + '">' + resp.data.title + '</li>'
+                        $("#groups-body").prepend(html_str);
+                        document.getElementById('newGroup').value = '';
+                    }
+                },
+                error: function (jqXHR, textStatus, errorThrown) {
+                    /*弹出jqXHR对象的信息*/
+                    alert("服務出錯");
+                    /*弹出其他两个参数的信息*/
+                }
+            })
+
+        })
+    }
+
+    function EnterCnGroupBtn() {
+        $(".enter-group-btn").click(function () {
+            STOCK_ID = $(this).attr("pk");
+            STOCK_NAME = $(this).attr("name");
+            $.ajax({
+                url: '/cn/groups/choice_list',
+                type: 'get',
+                dataType: "JSON",
+                success: function (resp) {
+                    if (!resp.code) {
+                        alert("獲取資料失敗,請重新嘗試")
+                    } else {
+                        $("#group-select").html(resp.data);
+                        $("#choiceGroupModal").modal("show");
+                    }
+                },
+                error: function (jqXHR, textStatus, errorThrown) {
+                    /*弹出jqXHR对象的信息*/
+                    alert("服務出錯");
+                    /*弹出其他两个参数的信息*/
+                }
+            })
+
+        })
+    }
+
+
+    function addToCnGroup() {
+        $("#confirm-join-btn").click(function () {
+            var gid = $('#group-select').val();
+            var gName = $('#group-select  option:selected').text();
+            console.log(gid, gName);
+            req_body = {
+                "stock_id": STOCK_ID,
+                "stock_nickname": STOCK_NAME,
+                "group_id": gid,
+                "group_name": gName
+            }
+            console.log(req_body);
+            if (confirm("確認將該公司加入 " + gName + " 嗎?")) {
+                $.ajax({
+                    url: '/cn/groupItem',
+                    type: 'post',
+                    dataType: "JSON",
+                    contentType: "application/json",
+                    data: JSON.stringify(req_body),
+                    success: function (resp) {
+                        if (!resp.code) {
+                            alert(resp.msg)
+                        } else {
+                            alert(resp.msg);
+                            $('#choiceGroupModal').modal('hide');
+                        }
+                    },
+                    error: function (jqXHR, textStatus, errorThrown) {
+                        /*弹出jqXHR对象的信息*/
+                        alert("服務出錯");
+                        /*弹出其他两个参数的信息*/
+                    }
+                })
+
+
+            }
+        });
+    }
+
+    function refreshNote() {
+        $.ajax({
+            url: '/cn/note?stock_id=' + STOCKID,
+            type: 'get',
+            dataType: "JSON",
+            success: function (resp) {
+                if (!resp.code) {
+                    alert("獲取資料失敗,請重新嘗試")
+                    return ''
+                } else {
+                    return resp.data;
+                }
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                /*弹出jqXHR对象的信息*/
+                return '';
+                /*弹出其他两个参数的信息*/
+            }
+        })
+    }
+
+    function saveNoteEvent() {
+        $("#note-submit").click(function () {
+            var note_text = $("#message").val();
+            if (!note_text) {
+                alert("內容不得為空")
+            } else {
+                req_body = {
+                    note: note_text,
+                    stock_id: STOCK_ID
+                }
+
+                $.ajax({
+                    url: "/cn/note",
+                    type: "post",
+                    dataType: "JSON",
+                    contentType: "application/json",
+                    data: JSON.stringify(req_body),
+                    success: function (resp) {
+                        if (!resp.code) {
+                            alert("新增筆記失敗,請重新嘗試")
+                        } else {
+                            alert("筆記成功")
+                            // 获取当前时间
+                            var now = new Date();
+                            // var date = now.getFullYear() + "-" + (now.getMonth() + 1) + "-" + now.getDate() + " " + now.getHours() + ":" + now.getMinutes() + ":" + now.getSeconds();
+                            var date = $.datepicker.formatDate("yy-mm-dd H:m:s", now);
+                            // 创建新的消息项
+                            var newMessage = '<li class="list-group-item">' + note_text + '<span class="badge">' + date + '</span></li>';
+
+                            // 将新消息项插入到列表的最上方
+                            $("#note-body").prepend(newMessage);
+                            if ($('#note-body li').length > 5) {
+                                $('#note-body li:last').remove();
+                            }
+
+                            // 清空输入框中的值
+                            $("#message").val("");
+                        }
+                    },
+                    error: function (jqXHR, textStatus, errorThrown) {
+                        /*弹出jqXHR对象的信息*/
+                        alert("服務出錯");
+                        /*弹出其他两个参数的信息*/
+                    }
+                })
+            }
+        })
+    }
+
+    function bindNoteListEvent() {
+        $(".noteList-btn").click(function () {
+            STOCKID = $(this).attr("pk");
+            console.log('sid=', STOCKID)
+            var response_data = refreshNote();
+            console.log('sid=', STOCKID, 'resp', response_data === '')
+            if (response_data === '') {
+                alert('筆記打開失敗')
+            } else {
+                $("#note-body").html(response_data);
+                $("#noteListModal").modal("show");
+            }
+
+        })
+    }
+
+    function clickChartEvent() {
+        $(".chart-btn").click(function () {
+            STOCKID = $(this).attr("pk");
+            // window.open("/cn/show/" + STOCK_ID);
+            $.ajax({
+                type: "GET",
+                url: "/cn/charts/" + STOCKID,
+                dataType: 'json',
+                success: function (result) {
+                    cur_chart.setOption(JSON.parse(result));
+                    $("#chartModal").modal("show");
+                }
+            });
+        })
+    }
+</script>
+
+{% endblock %}

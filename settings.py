@@ -1,10 +1,18 @@
+# -*- coding: utf-8 -*-
+# @Time : 2024/5/20  17:42
+# @Author : Andy Hsieh
+# @Desc :
 import os
 
-HOST = '0.0.0.0'
-PORT = 8888
-STATIC_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
-FILE_PATH = os.path.join(STATIC_PATH, 'files')
+PORT = 8880
 
+MONGOURI = 'mongodb://192.168.10.67:27017'
+# MONGOURI = 'mongodb://andy.h:123456@127.0.0.1:27017'
+
+REDISURI = 'redis://127.0.0.1:6379/15'
+
+STATIC_PATH = os.path.join(os.path.dirname(__file__), 'static')
+FILE_PATH = os.path.join(STATIC_PATH, 'files')
 
 class MessageContent:
     def __init__(self):

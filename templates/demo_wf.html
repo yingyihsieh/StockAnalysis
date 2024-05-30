@@ -1,0 +1,63 @@
+{% extends 'demo.html' %}
+
+
+{% block mainContent %}
+<h1 class="page-header">WorldFinance</h1>
+<div class="row placeholders">
+    <div class="col-xs-12 col-sm-6 placeholder">
+        <h4>{{date}}</h4>
+        <table class="table table-striped">
+            <thead>
+            <tr>
+                <th>name</th>
+                <th>value</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for k in keys %}
+            <tr>
+                <td>{{k}}</td>
+                <td>{{data[k]}}</td>
+            </tr>
+            {% endfor %}
+            <!-- 其他国家及其汇率 -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 折线图展示区 -->
+    <div class="col-xs-12 col-sm-6 placeholder">
+        <h4>NT/USD</h4>
+        <!-- 使用图表库进行折线图绘制 -->
+        <!-- 以下是一个开源的图表库 -->
+        <!-- https://www.chartjs.org/docs/latest/charts/line.html -->
+        <div id="chart" style="width: 600px; height: 450px">
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+{% block jsContent %}
+<script>
+    var cur_chart = echarts.init(document.getElementById('chart'), 'white', {renderer: 'canvas'});
+    $(
+        function () {
+            usd2ntChart();
+        }
+    );
+
+    function usd2ntChart() {
+        $.ajax({
+            type: "GET",
+            url: "/usd2nt",
+            dataType: 'json',
+            success: function (result) {
+                cur_chart.setOption(JSON.parse(result));
+            }
+        });
+    }
+</script>
+{% endblock %}
+

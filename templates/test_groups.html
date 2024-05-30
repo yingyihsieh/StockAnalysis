@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Bootstrap and jQuery Example</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $(".btn-group").hide();
+            $(".add-btn").hide();
+            $(".show-btn").click(function () {
+                $(".btn-group").toggle();
+                $(".add-btn").hide();
+            });
+            $(".group-btn").click(function () {
+                var group = $(this).text();
+                var name = $(this).parent().prev().text();
+                if (confirm("确定将 " + name + " 添加到 " + group + " 吗？")) {
+                    $(".add-btn").show();
+                    $(".add-btn").css("margin-top", "10px");
+                    $(".add-btn").css("margin-left", "auto");
+                    $(".add-btn").css("margin-right", "auto");
+                    $(".add-btn").text(name + " 已加入 " + group);
+                }
+            });
+        });
+    </script>
+</head>
+<body>
+<div class="container">
+    <div class="row">
+        <div class="col-md-6">
+            <h2>员工名字</h2>
+            <ul class="list-group">
+                <li class="list-group-item">张三</li>
+                <li class="list-group-item">李四</li>
+                <li class="list-group-item">王五</li>
+            </ul>
+        </div>
+        <div class="col-md-6">
+            <h2>操作按钮</h2>
+            <button type="button" class="btn btn-primary show-btn">显示团体</button>
+            <div class="btn-group">
+                <button type="button" class="btn btn-default group-btn">团体1</button>
+                <button type="button" class="btn btn-default group-btn">团体2</button>
+                <button type="button" class="btn btn-default group-btn">团体3</button>
+                <button type="button" class="btn btn-default group-btn">团体4</button>
+                <button type="button" class="btn btn-default group-btn">团体5</button>
+            </div>
+            <button type="button" class="btn btn-success add-btn"></button>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

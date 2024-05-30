@@ -1,0 +1,21 @@
+{% extends 'demo.html' %}
+
+
+{% block mainContent %}
+
+<div class="container-fluid">
+    <h1 class="page-header">網頁地圖</h1>
+    <div class="list-group">
+        <li class="list-group-item"><a href="{{url_for('read_news')}}" >我的新聞</a></li>
+        <a class="list-group-item" href="{{url_for('get_tw_company')}}">TW列表</a>
+        <a class="list-group-item" href="{{url_for('get_cn_company')}}">CN列表</a>
+        <a class="list-group-item" href="{{url_for('latest_world_finance')}}">今日總經</a>
+        <a class="list-group-item" href="{{url_for('group_admin')}}" >群組管理</a>
+        <!--            <li class="list-group-item"><input id="newsTrend_target" type="text" placeholder="stock_id" /><button id="newsTrendBtn" class="btn btn-primary" style="margin-left: 8px">新聞趨勢</button></li>-->
+        <!--            <li class="list-group-item"><input id="jer_target" type="text" placeholder="stock_id" /><button id="jerBtn" class="btn btn-primary" style="margin-left: 8px">JER趨勢</button></li>-->
+    </div>
+</div>
+
+{% endblock %}
+
+

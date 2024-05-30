@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>文穎投顧</title>
+    <link href="{{ url_for('static', path='plugins/bootstrap-3.4.1/css/bootstrap.css') }}" rel="stylesheet">
+    <style>
+        .hide {
+            display: none;
+        }
+
+        .group-title {
+            background-color: lightyellow;
+        }
+    </style>
+</head>
+<body>
+
+<!-- 横向导航栏 -->
+<nav class="navbar navbar-default">
+    <div class="container-fluid">
+        <div class="navbar-header" style="margin-bottom: 5px">
+            <a class="navbar-brand" href="{{ url_for('home')}}">文穎數據分析系統</a>
+        </div>
+        <ul class="nav navbar-nav navbar-right">
+            <button id="msgBtn" type="button" class="btn btn-primary navbar-btn">任務通知 <span
+                    class="badge"></span>
+            </button>
+        </ul>
+    </div>
+</nav>
+
+<!-- 左侧垂直导航栏 -->
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-sm-3 col-md-2 sidebar">
+            <ul class="nav nav-sidebar">
+                <li><a id="twNewsBtn" class="btn btn-primary navbar-btn" href="#" role="button" style="width: 150px;">台群新聞</a></li>
+                <li><a id="cnNewsBtn" class="btn btn-primary navbar-btn" href="#" role="button" style="width: 150px;">陸群新聞</a></li>
+                <li><a id="worldBtn" class="btn btn-primary navbar-btn" href="#" role="button" style="width: 150px;">總經更新</a></li>
+                <li><a id="incomeBtn" class="btn btn-primary navbar-btn" href="#" role="button" style="width: 150px;">營收更新</a></li>
+            </ul>
+
+        </div>
+        <div class="col-sm-9 col-md-10 main">
+            {% block mainContent %}{% endblock %}
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="twGroupsModal" tabindex="-1" role="dialog" aria-labelledby="twGroupsModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                        aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title" id="twGroupsModalLabel" style="text-align: center"><b>TW群組列表</b></h4>
+            </div>
+            <div class="modal-body row" id="twGroupsRow">
+
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="cnGroupsModal" tabindex="-1" role="dialog" aria-labelledby="cnGroupsModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                        aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title" id="cnGroupsModalLabel" style="text-align: center"><b>TW群組列表</b></h4>
+            </div>
+            <div class="modal-body row" id="cnGroupsRow">
+
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="msgModal" tabindex="-1" role="dialog" aria-labelledby="msgModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                        aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title" id="msgModalLabel" style="text-align: center"><b>觀察群組列表</b></h4>
+            </div>
+            <div class="modal-body">
+                <h3 id="notification-content" class="modal-content" style="background: red;text-align: center"></h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script src="{{ url_for('static', path='js/jquery-3.6.0.min.js') }}"></script>
+<script src="{{ url_for('static', path='js/jquery-ui.min.js') }}"></script>
+<script src="{{ url_for('static', path='plugins/bootstrap-3.4.1/js/bootstrap.min.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', path='plugins/echarts/echarts.min.js') }}"></script>
+
+
+<script>
+    $(function () {
+        clickTwBtn();
+        get_twGroups();
+        clickCnBtn();
+        get_CnGroups();
+        clickMsgBtn();
+        clickWfBtn();
+        clickIncomeBtn();
+    })
+
+    function get_twGroups() {
+        $.ajax({
+            url: "{{url_for('get_tw_groups')}}" + "?task=true",
+            type: "get",
+            dataType: "JSON",
+            contentType: "application/json",
+            success: function (resp) {
+                if (!resp.code) {
+                    alert(resp.msg)
+                } else {
+                    $("#twGroupsRow").html(resp.data)
+                }
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                /*弹出jqXHR对象的信息*/
+                alert("服務出錯");
+                /*弹出其他两个参数的信息*/
+            }
+        })
+
+    }
+
+    function clickTwBtn() {
+        $("#twNewsBtn").click(function () {
+            get_twGroups();
+            $("#twGroupsModal").modal("show");
+        })
+    }
+
+    function get_CnGroups() {
+        $.ajax({
+            url: "{{url_for('get_cn_groups')}}" + "?task=true",
+            type: "get",
+            dataType: "JSON",
+            contentType: "application/json",
+            success: function (resp) {
+                if (!resp.code) {
+                    alert(resp.msg)
+                } else {
+                    $("#cnGroupsRow").html(resp.data)
+                }
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                /*弹出jqXHR对象的信息*/
+                alert("服務出錯");
+                /*弹出其他两个参数的信息*/
+            }
+        })
+
+    }
+
+    function clickCnBtn() {
+        $("#cnNewsBtn").click(function () {
+            get_CnGroups();
+            $("#cnGroupsModal").modal("show");
+        })
+    }
+
+    function clickMsgBtn() {
+        $("#msgBtn").click(function () {
+            var unreads = $(".badge").text();
+            if (unreads) {
+                $(".badge").text("");
+            }
+            $("#msgModal").modal("show");
+
+        })
+    }
+
+    function startTwEvent(self) {
+        var tid = $(self).attr("task_id")
+        req_body = {
+            uid: tid
+        }
+
+        $.ajax({
+            url: "{{url_for('add_twNewsTask')}}",
+            type: "post",
+            dataType: "JSON",
+            contentType: "application/json",
+            data: JSON.stringify(req_body),
+            success: function (resp) {
+                if (!resp.code) {
+                    alert(resp.msg)
+                } else {
+                    alert(resp.msg)
+                    $(self).removeClass('btn-primary');
+                    $(self).addClass('btn-danger');
+                    $(self).attr("disabled", true)
+                }
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                /*弹出jqXHR对象的信息*/
+                alert("服務出錯");
+                /*弹出其他两个参数的信息*/
+            }
+        })
+    }
+
+    function startCnEvent(self) {
+        var tid = $(self).attr("task_id")
+        console.log(tid)
+        req_body = {
+            uid: tid
+        }
+
+        $.ajax({
+            url: "{{url_for('add_cnNewsTask')}}",
+            type: "post",
+            dataType: "JSON",
+            contentType: "application/json",
+            data: JSON.stringify(req_body),
+            success: function (resp) {
+                if (!resp.code) {
+                    alert(resp.msg)
+                } else {
+                    alert(resp.msg)
+                    $(self).removeClass('btn-primary');
+                    $(self).addClass('btn-danger');
+                    $(self).attr("disabled", true)
+                }
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                /*弹出jqXHR对象的信息*/
+                alert("服務出錯");
+                /*弹出其他两个参数的信息*/
+            }
+        })
+    }
+
+    function clickWfBtn() {
+        $("#worldBtn").click(function () {
+            $.ajax({
+            url: "{{url_for('world_finance')}}",
+            type: "get",
+            dataType: "JSON",
+            contentType: "application/json",
+            success: function (resp) {
+                if (!resp.code) {
+                    alert(resp.msg)
+                } else {
+                    alert('任務已開始')
+                }
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                /*弹出jqXHR对象的信息*/
+                alert("服務出錯");
+                /*弹出其他两个参数的信息*/
+            }
+        })
+        })
+    }
+
+    function clickIncomeBtn() {
+        $("#incomeBtn").click(function () {
+            $.ajax({
+            url: "{{url_for('latest_income')}}",
+            type: "get",
+            dataType: "JSON",
+            contentType: "application/json",
+            success: function (resp) {
+                if (!resp.code) {
+                    alert(resp.msg)
+                } else {
+                    alert('任務已開始')
+                }
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                /*弹出jqXHR对象的信息*/
+                alert("服務出錯");
+                /*弹出其他两个参数的信息*/
+            }
+        })
+        })
+    }
+</script>
+
+<script type="text/javascript">
+    var push_data = new EventSource("{{url_for('notification')}}")
+    push_data.onopen = function (event) {
+        // open事件
+        console.log("open event");
+    };
+    push_data.addEventListener('message', function (event) {
+        // var data = JSON.parse(event.data);
+        msgContent = event.data
+        if (msgContent) {
+            // alert(msgContent);
+            $(".badge").text("新通知");
+            $("#notification-content").text(msgContent);
+            // document.getElementById("result").append(msgContent + "\r\n");
+
+        }
+    }, false);
+    push_data.addEventListener('error', function (event) {
+        // error事件
+        console.log("error event");
+        console.log(event);
+    }, false);
+    xmlHttp = null;
+
+    function myFunction() {
+
+        try {// Firefox, Opera 8.0+, Safari, IE7
+            xmlHttp = new XMLHttpRequest();
+        } catch (e) {// Old IE
+            try {
+                xmlHttp = new ActiveXObject("Microsoft.XMLHTTP");
+            } catch (e) {
+                alert("Your browser does not support XMLHTTP!");
+                return;
+            }
+        }
+        url = "http://localhost:8888/";
+        xmlHttp.open("GET", url, false);
+        xmlHttp.send(null);
+        document.getElementById("response").innerHTML = xmlHttp.responseText;
+    }
+</script>
+
+{% block jsContent %}{% endblock %}
+</body>
+</html>

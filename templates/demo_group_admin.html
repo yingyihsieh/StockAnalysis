@@ -1,0 +1,158 @@
+{% extends 'demo.html' %}
+
+{% block mainContent %}
+<!-- tab content -->
+<div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
+    <h1 class="page-header">我的群組</h1>
+
+    <!-- Tabs -->
+    <ul class="nav nav-tabs">
+        <li class="active"><a data-toggle="tab" href="#group1-tab1">TW</a></li>
+        <li><a data-toggle="tab" href="#group1-tab2">CN</a></li>
+    </ul>
+
+    <!-- Tab content -->
+    <div class="tab-content">
+        <div id="group1-tab1" class="tab-pane fade in active">
+            <h3>台股</h3>
+            <div class="list-group">
+                {% for t in range(twGroups|length) %}
+                <button pk="{{twGroups[t].uid}}" type="button" class="list-group-item group-title">
+                    {{twGroups[t].title}}
+                </button>
+                {% if t == 0 %}
+                <div id="{{twGroups[t].uid}}" class="group-content list-group">
+                    {% for doc in twGroups[t].group_docs %}
+                    <button id="{{ doc.stock_id }}" pk="{{ doc.stock_id }}" type="button" class="list-group-item tw-sub-list-item">{{
+                        doc.stock_nickname }} {{ doc.stock_id }}
+                    </button>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div id="{{twGroups[t].uid}}" class="group-content list-group hide">
+                    {% for doc in twGroups[t].group_docs %}
+                    <button id="{{ doc.stock_id }}" pk="{{ doc.stock_id }}" type="button" class="list-group-item tw-sub-list-item">{{ doc.stock_nickname }} {{
+                        doc.stock_id }}
+                    </button>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+
+        <div id="group1-tab2" class="tab-pane fade">
+            <h3>陸股</h3>
+            <div class="list-group">
+                {% for t in range(cnGroups|length) %}
+                <button pk="{{cnGroups[t].uid}}" type="button" class="list-group-item group-title">
+                    {{cnGroups[t].title}}
+                </button>
+                {% if t == 0 %}
+                <div id="{{cnGroups[t].uid}}" class="group-content list-group">
+                    {% for doc in cnGroups[t].group_docs %}
+                    <button id="{{ doc.stock_id }}" pk="{{ doc.stock_id }}" type="button" class="list-group-item cn-sub-list-item">{{
+                        doc.stock_nickname }} {{ doc.stock_id }}
+                    </button>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div id="{{cnGroups[t].uid}}" class="group-content list-group hide">
+                    {% for doc in cnGroups[t].group_docs %}
+                    <button id="{{ doc.stock_id }}" pk="{{ doc.stock_id }}" type="button" class="list-group-item cn-sub-list-item">{{ doc.stock_nickname }} {{
+                        doc.stock_id }}
+                    </button>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% endfor %}
+        </div>
+
+    </div>
+
+
+</div>
+
+{% endblock %}
+
+{% block jsContent %}
+<script>
+    $(function () {
+        showHideList();
+        removeTwGroupItem();
+        removeCnGroupItem();
+
+    })
+
+    function showHideList() {
+        $(".group-title").click(function () {
+            var uid = $(this).attr('pk')
+            console.log(uid)
+            if ($("div #" + uid).hasClass("hide")) {
+                $("div .group-content").addClass("hide")
+                $("div #" + uid).removeClass("hide")
+            } else {
+                $("div #" + uid).addClass("hide")
+            }
+        })
+    }
+
+    function removeTwGroupItem() {
+        $(".tw-sub-list-item").click(function (){
+            var group_id = $(this).parent().get(0).id;
+            var stock_id = $(this).attr('pk')
+            if (confirm("确定将 " + stock_id +  "移除吗？")) {
+            console.log(group_id, stock_id)
+            $.ajax({
+                url: '/tw/groupItem?stock_id=' + stock_id + '&group_id=' + group_id,
+                type: 'delete',
+                dataType: "JSON",
+                success: function (resp) {
+                    if (!resp.code) {
+                        alert(resp.msg);
+                    } else {
+                        const element = document.getElementById(stock_id);
+                        element.remove();
+                        alert(resp.msg);
+
+                    }
+                },
+                error: function (jqXHR, textStatus, errorThrown) {
+                    /*弹出jqXHR对象的信息*/
+                    alert("服務出錯");
+                    /*弹出其他两个参数的信息*/
+                }
+            })}
+        })
+    }
+
+    function removeCnGroupItem() {
+        $(".cn-sub-list-item").click(function (){
+            var group_id = $(this).parent().get(0).id;
+            var stock_id = $(this).attr('pk')
+            console.log(group_id, stock_id)
+            if (confirm("确定将 " + stock_id +  "移除吗？")) {
+                $.ajax({
+                url: '/cn/groupItem?stock_id=' + stock_id + '&group_id=' + group_id,
+                type: 'delete',
+                dataType: "JSON",
+                success: function (resp) {
+                    if (!resp.code) {
+                        alert(resp.msg);
+                    } else {
+                        const element = document.getElementById(stock_id);
+                        element.remove();
+                        alert(resp.msg);
+                    }
+                },
+                error: function (jqXHR, textStatus, errorThrown) {
+                    /*弹出jqXHR对象的信息*/
+                    alert("服務出錯");
+                    /*弹出其他两个参数的信息*/
+                }
+            })
+            }
+        })
+    }
+</script>
+{% endblock %}

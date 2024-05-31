@@ -54,6 +54,16 @@ async def home(request: Request):
     )
 
 
+@common_router.post('/message')
+async def create_message(content: str = Query(...)):
+    try:
+        msg_content.content = content
+        print('api=', msg_content.content)
+        return {'code': 1, 'data': None, 'msg': 'send success'}
+    except:
+        return {'code': 0, 'data': None, 'msg': 'send fail'}
+
+
 @common_router.get('/test')
 async def test_html(request: Request):
     return templates.TemplateResponse(

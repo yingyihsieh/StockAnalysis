@@ -187,7 +187,7 @@ async def create_cn_note(body: NoteBody,
 async def get_cn_charts(stock_id: str = Path(...),
                         db=Depends(mongoClient)):
     data = db.cnCompanyData.find({'stock_id': stock_id},
-                                 {'_id': 0}).sort([('created', -1)]).limit(730)
+                                 {'_id': 0}).sort([('created', 1)]).limit(730)
     data = [d async for d in data]
     x, jer_y, producer_y = list(), list(), list()
 

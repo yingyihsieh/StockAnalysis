@@ -117,22 +117,33 @@ async def group_admin(request: Request,
 
 
 @common_router.get('/stock/world')
-async def latest_world_finance(request: Request,
-                               db=Depends(mongoClient)):
+async def latest_world_finance(
+        request: Request,
+        page: int = Query(default=1),
+        size: int = Query(default=15),
+        db=Depends(mongoClient)):
     model = db.world_stock
-    queryset = model.find({}, {'_id': 0}).sort([('date', -1)]).limit(1)
-    new_data = dict()
+    total = await model.count_documents({})
+    total_page, left = divmod(total, size)
+    total_page = total_page if not left else total_page + 1
+    queryset = model.find({}, {'_id': 0}).sort([('date', -1)]).skip((page - 1) * size).limit(size)
+    new_data = list()
     async for q in queryset:
-        new_data.update(q)
-    date = tsFormat(new_data.get('date', pendulum.today(tz='Asia/Taipei').timestamp()) )
+        item = dict()
+        q['date'] = tsFormat(q['date'])
+        item.update(q)
+        new_data.append(item)
 
     return templates.TemplateResponse(
         'demo_wf.html',
         {
             'request': request,
             'data': new_data,
-            'date': date,
-            'keys': ['US10Y-Y', 'US10Y-Y△%', 'USIND', 'USIND△%', 'DJIA', 'DJIA△%', 'NASDAQ', 'NASDAQ△%', 'SOX',
+            'cur_page': page,
+            'total_page': total_page,
+            'previous': False if page == 1 else True,
+            'next': False if page == total_page else True,
+            'keys': ['date','US10Y-Y', 'US10Y-Y△%', 'USIND', 'USIND△%', 'DJIA', 'DJIA△%', 'NASDAQ', 'NASDAQ△%', 'SOX',
                      'SOX△%', 'HSIND', 'HSIND△%', 'SSEC', 'SSEC△%', 'CSI300', 'CSI300△%',
                      'FI-NET', 'FI-Future-OI', 'FI-Option-OI', 'PC-R', 'US/NT', 'Top5Position',
                      'Top10Position', 'BullBearIND-R'],

@@ -31,7 +31,7 @@ async def get_tw_company(request: Request,
     print(total)
     total_page, left = divmod(total, size)
     total_page = total_page if not left else total_page + 1
-    queryset = model.find(filter, {'_id': 0, 'nickname': 1, 'stock_id': 1, 'yoy-1': 1, 'mom-1': 1, 'updated': 1}).sort('_id', -1).skip(
+    queryset = model.find(filter, {'_id': 0, 'nickname': 1, 'stock_id': 1, 'yoy-1': 1, 'mom-1': 1, 'updated': 1}).sort([('updated', -1), ('yoy-1', -1)]).skip(
         (page - 1) * size).limit(size)
     dataset = [q async for q in queryset]
     return templates.TemplateResponse(

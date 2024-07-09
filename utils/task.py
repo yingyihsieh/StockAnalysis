@@ -229,7 +229,6 @@ def world_finance_task():
     wf_notify()
 
 
-
 class UpdateYoY:
     def __init__(self):
         self.headers = {
@@ -243,10 +242,12 @@ class UpdateYoY:
         self.model = self.db.company2
 
     def date_format(self):
+        print('target dt = ', self.date)
         cy = str(self.date.year - 1911)
         cm = f'{self.date.month}'
         wy = str(self.date.year)
         wm = f'{self.date.month}' if self.date.month > 9 else f'0{self.date.month}'
+        print(f'cy = {cy}, cm = {cm}, wy = {wy}, wm = {wm}')
         return cy, cm, wy, wm
 
     def spider(self, year, month, index, file):
@@ -270,10 +271,13 @@ class UpdateYoY:
 
         reason_map = {str(d['公司代號']): {
             'remark': d['備註'].replace('-', ''),
-            'mom': round(d["營業收入-上月比較增減(%)"], 2),
-            'yoy': round(d["營業收入-去年同月增減(%)"], 2)
+            'mom': round(float(d["營業收入-上月比較增減(%)"]), 2),
+            'yoy': round(float(d["營業收入-去年同月增減(%)"]), 2)
         } for d in data}
+
+
         for s in reason_map:
+            print('update now = ', s)
 
             item = self.model.find_one({'stock_id': s}, {'_id': 1, 'stock_id': 1, 'updated': 1,
                                                          'yoy-1': 1, 'yoy-2': 1, 'yoy-3': 1,
@@ -281,29 +285,51 @@ class UpdateYoY:
                                                          'mom-1': 1, 'mom-2': 1, 'mom-3': 1,
                                                          'mom-4': 1, 'mom-5': 1, 'mom-6': 1})
 
-            time.sleep(0.5)
+            time.sleep(0.1)
             if not item:
                 continue
             if item['updated'] == f'{west_yr}{west_mn}':
                 continue
             print('updated==', s)
-            self.model.update_one({'stock_id': s},
-                                  {'$set': {
+            if item['yoy-1'] == '':
+                item['yoy-1'] = '0'
+            if item['yoy-2'] == '':
+                item['yoy-2'] = '0'
+            if item['yoy-3'] == '':
+                item['yoy-3'] = '0'
+            if item['yoy-4'] == '':
+                item['yoy-4'] = '0'
+            if item['yoy-5'] == '':
+                item['yoy-5'] = '0'
+            if item['mom-1'] == '':
+                item['mom-1'] = '0'
+            if item['mom-2'] == '':
+                item['mom-2'] = '0'
+            if item['mom-3'] == '':
+                item['mom-3'] = '0'
+            if item['mom-4'] == '':
+                item['mom-4'] = '0'
+            if item['mom-5'] == '':
+                item['mom-5'] = '0'
+
+            updated_item = {
                                  'remark': f'{west_yr}/{west_mn} ' + reason_map[s]['remark'],
                                  'updated': f'{west_yr}{west_mn}',
                                  'yoy-1': reason_map[s]['yoy'],
-                                 'yoy-2': item['yoy-1'],
-                                 'yoy-3': item['yoy-2'],
-                                 'yoy-4': item['yoy-3'],
-                                 'yoy-5': item['yoy-4'],
-                                 'yoy-6': item['yoy-5'],
+                                 'yoy-2': round(float(item['yoy-1']), 2),
+                                 'yoy-3': round(float(item['yoy-2']), 2),
+                                 'yoy-4': round(float(item['yoy-3']), 2),
+                                 'yoy-5': round(float(item['yoy-4']), 2),
+                                 'yoy-6': round(float(item['yoy-5']), 2),
                                  'mom-1': reason_map[s]['mom'],
-                                 'mom-2': item['mom-1'],
-                                 'mom-3': item['mom-2'],
-                                 'mom-4': item['mom-3'],
-                                 'mom-5': item['mom-4'],
-                                 'mom-6': item['mom-5']
-                             }})
+                                 'mom-2': round(float(item['mom-1']), 2),
+                                 'mom-3': round(float(item['mom-1']), 2),
+                                 'mom-4': round(float(item['mom-1']), 2),
+                                 'mom-5': round(float(item['mom-1']), 2),
+                                 'mom-6': round(float(item['mom-1']), 2)
+                             }
+            self.model.update_one({'stock_id': s},
+                                  {'$set': updated_item})
 
 
     def income_notify(self):

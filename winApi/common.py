@@ -122,6 +122,11 @@ async def latest_world_finance(
         page: int = Query(default=1),
         size: int = Query(default=15),
         db=Depends(mongoClient)):
+    keys = ['date','US10Y-Y', 'US10Y-Y△%', 'USIND', 'USIND△%', 'DJIA', 'DJIA△%', 'NASDAQ', 'NASDAQ△%', 'SOX',
+                     'SOX△%', 'HSIND', 'HSIND△%', 'SSEC', 'SSEC△%', 'CSI300', 'CSI300△%',
+                     'FI-NET', 'FI-Future-OI', 'FI-Option-OI', 'PC-R', 'US/NT', 'Top5Position',
+                     'Top10Position', 'BullBearIND-R']
+    keys += ['E-Mini NASDAQ FC', 'E-Mini NASDAQ UP%', 'E-Mini S&P FC', 'E-Mini S&P UP%', 'VIX FC', 'VIX UP%', 'E-Mini YM FC', 'E-Mini YM UP%', 'A50 FC', 'A50 UP%', 'HS FC', 'HS UP%']
     model = db.world_stock
     total = await model.count_documents({})
     total_page, left = divmod(total, size)
@@ -143,10 +148,7 @@ async def latest_world_finance(
             'total_page': total_page,
             'previous': False if page == 1 else True,
             'next': False if page == total_page else True,
-            'keys': ['date','US10Y-Y', 'US10Y-Y△%', 'USIND', 'USIND△%', 'DJIA', 'DJIA△%', 'NASDAQ', 'NASDAQ△%', 'SOX',
-                     'SOX△%', 'HSIND', 'HSIND△%', 'SSEC', 'SSEC△%', 'CSI300', 'CSI300△%',
-                     'FI-NET', 'FI-Future-OI', 'FI-Option-OI', 'PC-R', 'US/NT', 'Top5Position',
-                     'Top10Position', 'BullBearIND-R'],
+            'keys': keys,
         },
     )
 

@@ -196,19 +196,58 @@ def get_model():
     return db
 
 
+def futures():
+    def table2dict(table_str):
+        df = pd.read_html(table_str)
+        return df[0].to_dict(orient='records')
+
+    result_data = list()
+    result_dict = dict()
+    url = 'https://www.cnyes.com/futures/indexftr.aspx'
+    headers = {
+        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36'
+    }
+    resp = requests.get(url=url, headers=headers)
+    html = resp.text
+    soup = BeautifulSoup(html, 'html.parser')
+    tables = soup.find_all('table')
+    data1 = table2dict(str(tables[0]))
+    result_data += data1
+    data2 = table2dict(str(tables[1]))
+    result_data += data2[:2]
+    result_dict['E-Mini NASDAQ FC'] = result_data[0]['成交']
+    result_dict['E-Mini NASDAQ UP%'] = result_data[0]['漲%']
+    result_dict['E-Mini S&P FC'] = result_data[1]['成交']
+    result_dict['E-Mini S&P UP%'] = result_data[1]['漲%']
+    result_dict['VIX FC'] = result_data[2]['成交']
+    result_dict['VIX UP%'] = result_data[2]['漲%']
+    result_dict['E-Mini YM FC'] = result_data[3]['成交']
+    result_dict['E-Mini YM UP%'] = result_data[3]['漲%']
+    result_dict['A50 FC'] = result_data[4]['成交']
+    result_dict['A50 UP%'] = result_data[4]['漲%']
+    result_dict['HS FC'] = result_data[5]['成交']
+    result_dict['HS UP%'] = result_data[5]['漲%']
+    print(result_dict)
+    return result_dict
+
+
 def world_finance_task():
     print('start req', pendulum.now(tz='America/New_York'))
     keys = ['date', 'US10Y-Y', 'US10Y-Y△%', 'USIND', 'USIND△%', 'DJIA', 'DJIA△%', 'NASDAQ', 'NASDAQ△%', 'SOX', 'SOX△%', 'HSIND','HSIND△%','SSEC','SSEC△%','CSI300','CSI300△%','FI-NET', 'FI-Future-OI', 'FI-Option-OI', 'PC-R', 'US/NT', 'Top5Position', 'Top10Position', 'BullBearIND-R']
+    keys += ['E-Mini NASDAQ FC', 'E-Mini NASDAQ UP%', 'E-Mini S&P FC', 'E-Mini S&P UP%', 'VIX FC', 'VIX UP%', 'E-Mini YM FC', 'E-Mini YM UP%', 'A50 FC', 'A50 UP%', 'HS FC', 'HS UP%']
     r1 = run_oi()
     time.sleep(0.2)
     r2 = get_us2nt()
-    time.sleep(1)
+    time.sleep(0.5)
     r3 = get_world_index()
     time.sleep(0.2)
     r4 = get_largeTraderFutQry()
-    time.sleep(0.5)
+    time.sleep(0.3)
     r5 = get_mtx_long2short_ratio()
+    time.sleep(0.2)
     r6 = get_US10YY()
+    time.sleep(0.1)
+    r7 = futures()
     data = dict()
     print('end req')
     data['date'] = int(pendulum.parse(pendulum.today(tz='America/New_York').format('YYYY-MM-DD'), tz='Asia/Taipei').timestamp())
@@ -218,6 +257,7 @@ def world_finance_task():
     data.update(r4)
     data.update(r5)
     data.update(r6)
+    data.update(r7)
     data = {k: data[k] for k in keys}
     print('data=', data)
     db = get_model()
@@ -356,3 +396,5 @@ def income_task():
         os.mkdir(FILE_PATH)
     obj = UpdateYoY()
     obj.run()
+
+

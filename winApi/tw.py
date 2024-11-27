@@ -13,7 +13,7 @@ from fastapi.requests import Request
 from requestBody import NewsTaskBody, NoteBody, EPSBody, GroupBody, GroupItemBody
 from database import mongoClient, redisClient
 from utils.func import tsFormat
-from charts.tw import HolderLine, TopHolderLine, stockChart
+from charts.tw import HolderLine, TopHolderLine, stockChart, fundLine, fundBar
 
 tw_router = APIRouter()
 templates = Jinja2Templates(directory='templates')
@@ -330,3 +330,33 @@ async def get_tw_jer(
 
     bar = stockChart(date_arr, jer_min, jer_max, jer_f_min, jer_f_max, differ_set, job_offs, global_title)
     return bar.dump_options_with_quotes()
+
+
+@tw_router.get('/fund/{industry_name}')
+async def industry_fund_chart(industry_name: str = Path(...),
+                              db=Depends(mongoClient)
+                              ):
+    og_data = db.fundtable.find({},{'_id': 0, industry_name: 1, 'updated': 1}).sort([('_id', 1)])
+    x_data, y_data = list(), list()
+    async for d in og_data:
+        y_data.append(float(d[industry_name].replace('%', '')))
+        x_data.append(str(d['updated']))
+
+    print(x_data, y_data)
+    bar = fundBar(x=x_data, y=y_data, industry_name=industry_name)
+    return bar.dump_options_with_quotes()
+
+
+@tw_router.get('/industry/{industry_name}')
+async def industry_trend_chart(industry_name: str = Path(...),
+                              db=Depends(mongoClient)
+                              ):
+    og_data = db.industryjobs.find({'industry': industry_name}, {'_id': 0, 'jer': 1, 'datetime': 1}).sort([('_id', 1)])
+    x_data, y_data = list(), list()
+    async for d in og_data:
+        x_data.append(str((d['datetime'] + datetime.timedelta(hours=8)))[:10])
+        y_data.append(d['jer'])
+    print(x_data)
+    print(y_data)
+    line = fundLine(title=f'{industry_name} jer', x=x_data, y1=y_data, y1_name='%')
+    return line.dump_options_with_quotes()

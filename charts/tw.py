@@ -144,3 +144,36 @@ def TopHolderLine(title, x, y1, y2, y3, y4, y1_name, y2_name, y3_name, y4_name):
                          )
     )
     return c
+
+
+def fundBar(x, y, industry_name):
+    bar = (
+        Bar()
+        .add_xaxis(x)
+        .add_yaxis("資金%", y)
+        .set_global_opts(title_opts=opts.TitleOpts(title=f"{industry_name}-資金流向"))
+        # title_opts标题
+    )
+    return bar
+
+
+def fundLine(title, x, y1, y1_name):
+    c = (
+        Line()
+        .add_xaxis(xaxis_data=x)
+        .add_yaxis(
+            y1_name,
+            y1,
+            markline_opts=opts.MarkLineOpts(data=[opts.MarkLineItem(type_="average")]),
+            markpoint_opts=opts.MarkPointOpts(
+                data=[opts.MarkPointItem(name=title+y1_name, coord=[x[-1], y1[-1]], value=y1[-1])]
+            ),
+            color='blue',
+            linestyle_opts=opts.LineStyleOpts(width=8)
+        ).set_global_opts(title_opts=opts.TitleOpts(title=title),
+                          tooltip_opts=opts.TooltipOpts(trigger="axis"),
+                          datazoom_opts=opts.DataZoomOpts(range_start=0, range_end=100),
+                          xaxis_opts=opts.AxisOpts(axislabel_opts=opts.LabelOpts(rotate=-15))
+                          )
+    )
+    return c

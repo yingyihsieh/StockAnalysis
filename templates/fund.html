@@ -1,0 +1,82 @@
+{% extends 'demo.html' %}
+
+{% block pagetitle %}
+    <title>資金流向圖表</title>
+{% endblock %}
+
+{% block pagestyle %}
+    .btn-group .btn {
+            width: 100%; /* 使按鈕大小一致 */
+        }
+{% endblock %}
+
+{% block mainContent %}
+    <h1>產業類別</h1>
+
+    {% for toolbar in toolbars %}
+        <div class="btn-toolbar" role="toolbar">
+            {% for group_index in range(0, toolbar|length,1) %}
+                <div class="btn-group" role="group">
+                    {% for button in toolbar[group_index:group_index+1] %}
+                        <button type="button" class="btn btn-default btn-industry">{{ button }}</button>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+        </div>
+        <br> <!-- 每個 toolbar 之間的間隔 -->
+    {% endfor %}
+    </div>
+    <div id="canvas-area" style="margin-top: 75px; margin-left: 275px">
+        <div id="canvas-name" style="margin-bottom: 100px; font-size: 22px;"></div>
+        <div id="chart" style="width: 800px; height: 600px"></div>
+        <div id="chart2" style="width: 800px; height: 600px"></div>
+    </div>
+
+{% endblock %}
+
+{% block jsContent %}
+    <script>
+    var INDUSTRY_NAME;
+    var cur_chart = echarts.init(document.getElementById('chart'), 'white', {renderer: 'canvas'});
+    var cur_chart2 = echarts.init(document.getElementById('chart2'), 'white', {renderer: 'canvas'});
+
+    $(function () {
+        showChartEvent();
+    })
+
+    function showChartEvent() {
+        $(".btn-industry").click(function () {
+            INDUSTRY_NAME = $(this).text();
+            console.log(INDUSTRY_NAME)
+            $("#canvas-name").text("正在看產業: " + INDUSTRY_NAME)
+
+            $.ajax({
+                type: "GET",
+                url: "/tw/fund/" + INDUSTRY_NAME,
+                dataType: 'json',
+                success: function (result) {
+                    cur_chart.setOption(JSON.parse(result));
+
+                },
+                error: function (jqXHR, textStatus, errorThrown) {
+                    alert('jer chart fail')
+                }
+            });
+
+            $.ajax({
+                type: "GET",
+                url: "/tw/industry/" + INDUSTRY_NAME,
+                dataType: 'json',
+                success: function (result) {
+                    cur_chart2.setOption(JSON.parse(result));
+
+                },
+                error: function (jqXHR, textStatus, errorThrown) {
+                    alert('Holder chart fail')
+                    return ''
+                }
+            });
+        })
+    }
+    </script>
+{% endblock %}

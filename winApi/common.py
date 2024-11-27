@@ -238,3 +238,17 @@ async def get_news_list(loc: str=Path(...),
             html_str = f'<a href="{d["link"]}" class="list-group-item"><h4 class="list-group-item-heading">{d["title"]}</h4><p class="list-group-item-text" style="color:red;">{d["created"]} 平準基金</p></a>'
             news_list.append(html_str)
     return {'code': 1, 'data': '\n'.join(news_list), 'msg': '獲取成功'}
+
+
+@common_router.get('/industry_fund')
+async def industry_fund(request: Request, db=Depends(mongoClient)):
+    industry_list = db.industrytable.find({}, {'_id': 0, 'type': 1})
+    industries = [i['type'] async for i in industry_list]
+    toolbars = [industries[idx: idx+9] for idx in range(0, len(industries), 9)]
+    return templates.TemplateResponse(
+        'fund.html',
+        {
+            'request': request,
+            'toolbars': toolbars
+        },
+    )

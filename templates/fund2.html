@@ -1,0 +1,122 @@
+{% extends 'demo.html' %}
+
+{% block pagetitle %}
+    <title>資金流向圖表2</title>
+{% endblock %}
+
+{% block pagestyle %}
+    .active {
+    background-color: #007bff !important; /* 按鈕選中顏色 */
+    color: white !important;
+    }
+
+    .row {
+     margin-bottom: 10px
+    }
+{% endblock %}
+
+{% block mainContent %}
+    <h2>選擇產業</h2>
+    {% for toolbar in toolbars %}
+        <div class="row">
+            <div class="btn-group" role="group" aria-label="Basic example">
+                {% for item in toolbar %}
+                    <button type="button" class="btn btn-default btn-industry">{{ item }}</button>
+                {% endfor %}
+            </div>
+        </div>
+    {% endfor %}
+
+    <div class="row">
+        <button id="search-btn" class="btn btn-primary">搜尋</button>
+    </div>
+
+    <div class="row">
+        <div id="chart" style="width: 800px; height: 600px"></div>
+        <div id="chart2" style="width: 800px; height: 600px"></div>
+    </div>
+
+{% endblock %}
+
+{% block jsContent %}
+
+    <script>
+        var cur_chart = echarts.init(document.getElementById('chart'), 'white', {renderer: 'canvas'});
+        var cur_chart2 = echarts.init(document.getElementById('chart2'), 'white', {renderer: 'canvas'});
+
+        $(document).ready(function () {
+            let clickCount = 0;
+            let industry_list = [];
+            $('.btn-industry').click(function () {
+                var sub_val = $(this).text();
+                if (!$(this).hasClass('active')) {
+                    if (clickCount < 5) {
+                        $(this).toggleClass('active');
+                        clickCount++;
+                        if (!industry_list.includes(sub_val)) {
+                            industry_list.push(sub_val)
+                        }
+                    }
+                } else {
+                    $(this).removeClass('active');
+                    clickCount--;
+                    if (industry_list.includes(sub_val)) {
+                        industry_list = industry_list.filter(item => item !== sub_val)
+                    }
+                }
+
+                if (clickCount >= 5) {
+                    $('.btn-industry').not('.active').addClass('disabled');
+                } else {
+                    $('.btn-industry').not('.active').removeClass('disabled');
+                }
+
+                console.log(clickCount);
+                console.log(industry_list);
+            });
+
+            $('#search-btn').click(function () {
+                if (industry_list.length > 5 || industry_list.length < 1) {
+                    alert("請選擇最少一個,最多五個")
+                } else {
+                    req_body = {
+                        industry: industry_list,
+                    }
+
+                    $.ajax({
+                        url: "/tw/fund",
+                        type: "post",
+                        dataType: "JSON",
+                        contentType: "application/json",
+                        data: JSON.stringify(req_body),
+                        success: function (result) {
+                            cur_chart.setOption(JSON.parse(result));
+
+                        },
+                        error: function (jqXHR, textStatus, errorThrown) {
+                            alert('jer chart fail')
+                        }
+                    });
+
+                    $.ajax({
+                        url: "/tw/industry",
+                        type: "post",
+                        dataType: "JSON",
+                        contentType: "application/json",
+                        data: JSON.stringify(req_body),
+                        success: function (result) {
+                            cur_chart2.setOption(JSON.parse(result));
+
+                        },
+                        error: function (jqXHR, textStatus, errorThrown) {
+                            alert('Holder chart fail')
+                            return ''
+                        }
+                    });
+                }
+
+            })
+        });
+    </script>
+
+{% endblock %}

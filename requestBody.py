@@ -34,3 +34,7 @@ class GroupItemBody(BaseModel):
     stock_nickname: str
     group_id: str
     group_name: str
+
+
+class FundBody(BaseModel):
+    industry: list

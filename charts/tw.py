@@ -157,23 +157,25 @@ def fundBar(x, y, industry_name):
     return bar
 
 
-def fundLine(title, x, y1, y1_name):
-    c = (
-        Line()
-        .add_xaxis(xaxis_data=x)
-        .add_yaxis(
-            y1_name,
-            y1,
-            markline_opts=opts.MarkLineOpts(data=[opts.MarkLineItem(type_="average")]),
-            markpoint_opts=opts.MarkPointOpts(
-                data=[opts.MarkPointItem(name=title+y1_name, coord=[x[-1], y1[-1]], value=y1[-1])]
-            ),
-            color='blue',
-            linestyle_opts=opts.LineStyleOpts(width=8)
-        ).set_global_opts(title_opts=opts.TitleOpts(title=title),
-                          tooltip_opts=opts.TooltipOpts(trigger="axis"),
-                          datazoom_opts=opts.DataZoomOpts(range_start=0, range_end=100),
-                          xaxis_opts=opts.AxisOpts(axislabel_opts=opts.LabelOpts(rotate=-15))
-                          )
+def fundLine(title, data_dict):
+    colors = ['red', 'blue', 'green', 'orange', 'Purple']
+    x_data = data_dict.pop('x_data')
+    line_chart = Line().add_xaxis(xaxis_data=x_data)
+    for k in data_dict:
+        line_chart.add_yaxis(k,
+                             data_dict[k],
+                             markline_opts=opts.MarkLineOpts(data=[opts.MarkLineItem(type_="average")]),
+                             markpoint_opts=opts.MarkPointOpts(
+                                 data=[opts.MarkPointItem(name=k, coord=[x_data[-1], data_dict[k][-1]], value=data_dict[k][-1])]
+                             ),
+                             color=colors.pop(0),
+                             linestyle_opts=opts.LineStyleOpts(width=8)
+                             )
+    line_chart.set_global_opts(
+        title_opts=opts.TitleOpts(title=title),
+        tooltip_opts=opts.TooltipOpts(trigger="axis"),
+        datazoom_opts=opts.DataZoomOpts(range_start=0, range_end=100),
+        xaxis_opts=opts.AxisOpts(axislabel_opts=opts.LabelOpts(rotate=-15))
     )
-    return c
+
+    return line_chart

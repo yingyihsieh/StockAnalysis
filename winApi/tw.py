@@ -3,6 +3,7 @@
 # @Author : Andy Hsieh
 # @Desc :
 import hashlib
+import json
 import time
 import pendulum
 import datetime
@@ -10,7 +11,7 @@ from decimal import Decimal
 from fastapi.templating import Jinja2Templates
 from fastapi import APIRouter, Depends, Query, Path
 from fastapi.requests import Request
-from requestBody import NewsTaskBody, NoteBody, EPSBody, GroupBody, GroupItemBody
+from requestBody import NewsTaskBody, NoteBody, EPSBody, GroupBody, GroupItemBody, FundBody
 from database import mongoClient, redisClient
 from utils.func import tsFormat
 from charts.tw import HolderLine, TopHolderLine, stockChart, fundLine, fundBar
@@ -332,31 +333,49 @@ async def get_tw_jer(
     return bar.dump_options_with_quotes()
 
 
-@tw_router.get('/fund/{industry_name}')
-async def industry_fund_chart(industry_name: str = Path(...),
+@tw_router.post('/fund')
+async def industry_fund_chart(body: FundBody,
                               db=Depends(mongoClient)
                               ):
-    og_data = db.fundtable.find({},{'_id': 0, industry_name: 1, 'updated': 1}).sort([('_id', 1)])
-    x_data, y_data = list(), list()
+    industry_list = body.industry
+    project_dict = {'_id': 0, 'updated': 1}
+    project_dict.update({i: 1 for i in industry_list})
+    og_data = db.fundtable.find({}, project_dict).sort([('_id', 1)])
+    data_dict = dict()
     async for d in og_data:
-        y_data.append(float(d[industry_name].replace('%', '')))
-        x_data.append(str(d['updated']))
+        for k in d:
+            val = str(d[k]) if k == 'updated' else float(d[k].replace('%', ''))
+            if k not in data_dict:
+                if k != 'updated':
+                    data_dict[k] = [val]
+                else:
+                    data_dict['x_data'] = [val]
+            else:
+                if k != 'updated':
+                    data_dict[k] = [val]
+                else:
+                    data_dict['x_data'] = [val]
 
-    print(x_data, y_data)
-    bar = fundBar(x=x_data, y=y_data, industry_name=industry_name)
-    return bar.dump_options_with_quotes()
+    print(data_dict)
+    line = fundLine(title=f'產業資金', data_dict=data_dict)
+    return line.dump_options_with_quotes()
 
 
-@tw_router.get('/industry/{industry_name}')
-async def industry_trend_chart(industry_name: str = Path(...),
-                              db=Depends(mongoClient)
+@tw_router.post('/industry')
+async def industry_trend_chart(body: FundBody,
+                               db=Depends(mongoClient)
                               ):
-    og_data = db.industryjobs.find({'industry': industry_name}, {'_id': 0, 'jer': 1, 'datetime': 1}).sort([('_id', 1)])
-    x_data, y_data = list(), list()
+    industry_list = body.industry
+    group = {"$group": {"_id": "$industry", "dt_list": {"$push": "$datetime"}, "jer_list": {"$push": "$jer"}}}
+    match = {'$match': {'industry': {'$in': industry_list}}}
+    sort = {'$sort': {'_id': 1}}
+    og_data = db.industryjobs.aggregate([match, sort, group])
+    data_dict = dict()
     async for d in og_data:
-        x_data.append(str((d['datetime'] + datetime.timedelta(hours=8)))[:10])
-        y_data.append(d['jer'])
-    print(x_data)
-    print(y_data)
-    line = fundLine(title=f'{industry_name} jer', x=x_data, y1=y_data, y1_name='%')
+        if 'x_data' not in data_dict:
+            data_dict['x_data'] = [str((i + datetime.timedelta(hours=8)))[:10] for i in d['dt_list']]
+        if d['_id'] not in data_dict:
+            data_dict[d['_id']] = d['jer_list']
+    print(data_dict)
+    line = fundLine(title=f'產業jer', data_dict=data_dict)
     return line.dump_options_with_quotes()

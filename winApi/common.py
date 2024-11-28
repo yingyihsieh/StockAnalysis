@@ -246,7 +246,7 @@ async def industry_fund(request: Request, db=Depends(mongoClient)):
     industries = [i['type'] async for i in industry_list]
     toolbars = [industries[idx: idx+9] for idx in range(0, len(industries), 9)]
     return templates.TemplateResponse(
-        'fund.html',
+        'fund2.html',
         {
             'request': request,
             'toolbars': toolbars

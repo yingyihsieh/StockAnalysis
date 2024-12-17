@@ -3,19 +3,20 @@
 # @Author : Andy Hsieh
 # @Desc :
 import asyncio
+import time
 
 import pendulum
+from decimal import Decimal
 from fastapi.templating import Jinja2Templates
 from fastapi import APIRouter, BackgroundTasks, Depends, Path, Query
 from fastapi.requests import Request
 from sse_starlette.sse import EventSourceResponse
 from settings import msg_content
-from utils.func import tsFormat
+from utils.func import tsFormat, get_billable_weight_estimator, demo_requests
 from utils.task import world_finance_task, income_task
-from database import mongoClient
+from database import mongoClient, redisClient
 from charts.common import usd2nt_Line
-
-
+from requestBody import ShipBody, CompareBody
 
 common_router = APIRouter()
 templates = Jinja2Templates(directory='templates')
@@ -252,3 +253,95 @@ async def industry_fund(request: Request, db=Depends(mongoClient)):
             'toolbars': toolbars
         },
     )
+
+
+@common_router.get('/ship_estimator')
+async def ship_estimator(request: Request):
+    return templates.TemplateResponse(
+        'ship.html',
+        {
+            'request': request,
+        },
+    )
+
+
+@common_router.post('/ship/calculator')
+async def ship_price_calculator(body: ShipBody, rdb=Depends(redisClient)):
+    rows = body.row_data
+    time.sleep(1)
+    token = await rdb.get('bob:token')
+    print(rows)
+    print(token)
+    ship_result = []
+    for r in rows:
+        temp_result = []
+        for pt in [1, 2, 8]:
+            res = get_billable_weight_estimator(token=token, length=r[0], width=r[1], height=r[2], weight=r[3], quantity=r[-1], pack=pt)
+            temp_result.append(res)
+            time.sleep(0.5)
+        ship_result.append(temp_result)
+
+    table_html = '<table class="table"><thead><tr><th>#</th><th>size</th><th>weight</th><th>quantity</th><th>BillableBox</th><th>BillableBubbleMailer</th><th>BiilableShipInOwn</th></tr></thead><tbody>{content}</tbody></table>'
+    body_str = ''
+    for r in range(len(rows)):
+        body_str += f'<tr><th scope="row"><input type="checkbox" class="row-checkbox"></th><td>{rows[r][0]}x{rows[r][1]}x{rows[r][2]}</td><td>{rows[r][3]}</td><td>{rows[r][4]}</td><td>{ship_result[r][0]}</td><td>{ship_result[r][1]}</td><td>{ship_result[r][2]}</td></tr>'
+
+    table_str = table_html.format(content=body_str)
+    return table_str
+
+
+
+@common_router.post('/ship/comparator')
+async def ship_price_calculator(body: CompareBody,
+                                rdb=Depends(redisClient)
+                                ):
+    rows = body.row_data
+    print('rows=', rows)
+    ship_weight_array = [[int(Decimal(r[3].split(',')[0].replace('oz', ''))), int(Decimal(r[4].split(',')[0].replace('oz', ''))), int(Decimal(r[5].split(',')[0].replace('oz', '')))] for r in rows]
+    print('swa= ', ship_weight_array)
+    zone_price_list = []
+    async with rdb.pipeline(transaction=True) as pipe:
+        zone_weight = await pipe.lrange("bob:zone_weight", 0, -1).execute()
+        if zone_weight:
+            zone_weight = zone_weight[0]
+        else:
+            raise ValueError('miss zw')
+        for weight_list in ship_weight_array:
+            for w in weight_list:
+                pipe.lrange(f"bob:oz:{w}", 0, -1)
+            row_weight = await pipe.execute()
+            zone_price_list.append(row_weight)
+    print('zw = ', zone_weight)
+    print('ZPL', zone_price_list)
+    result_rows = []
+    box_init, bubble_init, own_init = 0, 0, 0
+    for r in range(len(rows)):
+        temp_rows = rows[r][:3]
+        box_price = round(sum([Decimal(zone_weight[i]) * Decimal(zone_price_list[r][0][i]) for i in range(len(zone_weight))])/Decimal('100'), 2) if zone_price_list[r][0] else 0
+        bubble_price = round(sum([Decimal(zone_weight[i]) * Decimal(zone_price_list[r][1][i]) for i in range(len(zone_weight))])/Decimal('100'), 2) if zone_price_list[r][1] else 0
+        own_price = round(sum([Decimal(zone_weight[i]) * Decimal(zone_price_list[r][2][i]) for i in range(len(zone_weight))])/Decimal('100'), 2) if zone_price_list[r][2] else 0
+        if r == 0:
+            box_init, bubble_init, own_init = box_price, bubble_price, own_price
+            temp_rows += [box_price, bubble_price, own_price, 0, 0, 0]
+        else:
+            temp_rows += [box_price, bubble_price, own_price, box_price - box_init, bubble_price - bubble_init, own_price - own_init]
+        result_rows.append(temp_rows)
+    print('result rows = ', result_rows)
+    table_html = ''
+    table_html = '<table class="table"><thead><tr><th>size</th><th>weight</th><th>quantity</th><th>BillableBoxPrice</th><th>BillableBubbleMailerPrice</th><th>BiilableShipInOwnPrice</th><th>BoxPriceDiffer</th><th>BubbleMailerPriceDiffer</th><th>ShipInOwnPricePriceDiffer</th></tr></thead><tbody>{content}</tbody></table>'
+    body_str = ''
+    for r in result_rows:
+        body_str += f'<td>{r[0]}</td><td>{r[1]}</td><td>{r[2]}</td><td>{r[3]}</td><td>{r[4]}</td><td>{r[5]}</td><td>{r[6]}</td><td>{r[7]}</td><td>{r[8]}</td></tr>'
+    table_str = table_html.format(content=body_str)
+    return table_str
+
+
+@common_router.get('/rdb/test')
+async def spider_test(rdb=Depends(redisClient)):
+    weight_list = [2, 3, 4]
+    async with rdb.pipeline(transaction=True) as pipe:
+        for w in weight_list:
+            pipe.lrange(f"oz:{w}", 0, -1)
+        res = await pipe.execute()
+        print(res)
+    return 'ok'

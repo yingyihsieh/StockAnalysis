@@ -3,7 +3,7 @@
 # @Author : Andy Hsieh
 # @Desc :
 from pydantic import BaseModel
-
+from typing import List
 
 class GroupBody(BaseModel):
     title: str
@@ -38,3 +38,11 @@ class GroupItemBody(BaseModel):
 
 class FundBody(BaseModel):
     industry: list
+
+
+class ShipBody(BaseModel):
+    row_data: List[List[int]]
+
+
+class CompareBody(BaseModel):
+    row_data: List[List[str]]

@@ -12,7 +12,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, Path, Query
 from fastapi.requests import Request
 from sse_starlette.sse import EventSourceResponse
 from settings import msg_content
-from utils.func import tsFormat, get_billable_weight_estimator, demo_requests
+from utils.func import tsFormat, get_billable_weight_estimator, MyThread, get_mcf
 from utils.task import world_finance_task, income_task
 from database import mongoClient, redisClient
 from charts.common import usd2nt_Line
@@ -278,13 +278,13 @@ async def ship_price_calculator(body: ShipBody, rdb=Depends(redisClient)):
         for pt in [1, 2, 8]:
             res = get_billable_weight_estimator(token=token, length=r[0], width=r[1], height=r[2], weight=r[3], quantity=r[-1], pack=pt)
             temp_result.append(res)
-            time.sleep(0.5)
+            time.sleep(0.3)
         ship_result.append(temp_result)
 
-    table_html = '<table class="table"><thead><tr><th>#</th><th>size</th><th>weight</th><th>quantity</th><th>BillableBox</th><th>BillableBubbleMailer</th><th>BiilableShipInOwn</th></tr></thead><tbody>{content}</tbody></table>'
+    table_html = '<table class="table"><thead><tr><th>#</th><th>size</th><th>weight</th><th>quantity</th><th>ShipBobBox</th><th>ShipBobBM</th><th>ShipBobSIO</th><th>Amazon(3d)</th></tr></thead><tbody>{content}</tbody></table>'
     body_str = ''
     for r in range(len(rows)):
-        body_str += f'<tr><th scope="row"><input type="checkbox" class="row-checkbox"></th><td>{rows[r][0]}x{rows[r][1]}x{rows[r][2]}</td><td>{rows[r][3]}</td><td>{rows[r][4]}</td><td>{ship_result[r][0]}</td><td>{ship_result[r][1]}</td><td>{ship_result[r][2]}</td></tr>'
+        body_str += f'<tr><th scope="row"><input type="checkbox" class="row-checkbox"></th><td>{rows[r][0]}x{rows[r][1]}x{rows[r][2]}</td><td>{rows[r][3]}</td><td>{rows[r][4]}</td><td>{ship_result[r][0]}</td><td>{ship_result[r][1]}</td><td>{ship_result[r][2]}</td><td>{rows[r][3]}oz,{rows[r][0]}x{rows[r][1]}x{rows[r][2]}</td></tr>'
 
     table_str = table_html.format(content=body_str)
     return table_str
@@ -297,7 +297,14 @@ async def ship_price_calculator(body: CompareBody,
                                 ):
     rows = body.row_data
     print('rows=', rows)
-    ship_weight_array = [[int(Decimal(r[3].split(',')[0].replace('oz', ''))), int(Decimal(r[4].split(',')[0].replace('oz', ''))), int(Decimal(r[5].split(',')[0].replace('oz', '')))] for r in rows]
+    ship_weight_array = list()
+    amazon_weight_array = list()
+    for r in rows:
+        ship_weight_array.append([int(Decimal(r[3].split(',')[0].replace('oz', ''))), int(Decimal(r[4].split(',')[0].replace('oz', ''))),int(Decimal(r[5].split(',')[0].replace('oz', '')))])
+        amazon_weight_array.append(r[6])
+    print(amazon_weight_array)
+    t = MyThread(get_mcf, (amazon_weight_array,))
+    t.start()
     print('swa= ', ship_weight_array)
     zone_price_list = []
     async with rdb.pipeline(transaction=True) as pipe:
@@ -313,25 +320,29 @@ async def ship_price_calculator(body: CompareBody,
             zone_price_list.append(row_weight)
     print('zw = ', zone_weight)
     print('ZPL', zone_price_list)
+    t.join()
+    amazon_price_list = t.get_result()
+    print('APL=', amazon_price_list)
     result_rows = []
-    box_init, bubble_init, own_init = 0, 0, 0
+    box_init, bubble_init, own_init, amazon_init = 0, 0, 0, 0
     for r in range(len(rows)):
         temp_rows = rows[r][:3]
         box_price = round(sum([Decimal(zone_weight[i]) * Decimal(zone_price_list[r][0][i]) for i in range(len(zone_weight))])/Decimal('100'), 2) if zone_price_list[r][0] else 0
         bubble_price = round(sum([Decimal(zone_weight[i]) * Decimal(zone_price_list[r][1][i]) for i in range(len(zone_weight))])/Decimal('100'), 2) if zone_price_list[r][1] else 0
         own_price = round(sum([Decimal(zone_weight[i]) * Decimal(zone_price_list[r][2][i]) for i in range(len(zone_weight))])/Decimal('100'), 2) if zone_price_list[r][2] else 0
+        amazon_price = amazon_price_list[r]
         if r == 0:
-            box_init, bubble_init, own_init = box_price, bubble_price, own_price
-            temp_rows += [box_price, bubble_price, own_price, 0, 0, 0]
+            box_init, bubble_init, own_init, amazon_init = box_price, bubble_price, own_price, amazon_price
+            temp_rows += [box_price, bubble_price, own_price, amazon_price, 0, 0, 0, 0]
         else:
-            temp_rows += [box_price, bubble_price, own_price, box_price - box_init, bubble_price - bubble_init, own_price - own_init]
+            temp_rows += [box_price, bubble_price, own_price, amazon_price, box_price - box_init, bubble_price - bubble_init, own_price - own_init, amazon_price-amazon_init]
         result_rows.append(temp_rows)
     print('result rows = ', result_rows)
     table_html = ''
-    table_html = '<table class="table"><thead><tr><th>size</th><th>weight</th><th>quantity</th><th>BillableBoxPrice</th><th>BillableBubbleMailerPrice</th><th>BiilableShipInOwnPrice</th><th>BoxPriceDiffer</th><th>BubbleMailerPriceDiffer</th><th>ShipInOwnPricePriceDiffer</th></tr></thead><tbody>{content}</tbody></table>'
+    table_html = '<table class="table"><thead><tr><th>size</th><th>weight</th><th>quantity</th><th>ShipBobBoxPrice</th><th>ShipBobBMPrice</th><th>ShipBobSIOPrice</th><th>AmazonPrice</th><th>BoxPriceDiffer</th><th>BMPriceDiffer</th><th>SIOPricePriceDiffer</th><th>AmazonPricePriceDiffer</th></tr></thead><tbody>{content}</tbody></table>'
     body_str = ''
     for r in result_rows:
-        body_str += f'<td>{r[0]}</td><td>{r[1]}</td><td>{r[2]}</td><td>{r[3]}</td><td>{r[4]}</td><td>{r[5]}</td><td>{r[6]}</td><td>{r[7]}</td><td>{r[8]}</td></tr>'
+        body_str += f'<td>{r[0]}</td><td>{r[1]}</td><td>{r[2]}</td><td>{r[3]}</td><td>{r[4]}</td><td>{r[5]}</td><td>{r[6]}</td><td>{r[-4]}</td><td>{r[-3]}</td><td>{r[-2]}</td><td>{r[-1]}</td></tr>'
     table_str = table_html.format(content=body_str)
     return table_str
 

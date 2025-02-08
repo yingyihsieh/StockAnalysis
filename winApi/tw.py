@@ -340,9 +340,17 @@ async def industry_fund_chart(body: FundBody,
     industry_list = body.industry
     project_dict = {'_id': 0, 'updated': 1}
     project_dict.update({i: 1 for i in industry_list})
+    print(project_dict)
     og_data = db.fundtable.find({}, project_dict).sort([('_id', 1)])
-    data_dict = dict()
+    data_dict = {k: [] for k in project_dict if k != "_id"}
     async for d in og_data:
+        print('d:::', d)
+        for k in data_dict:
+            if k == 'updated':
+                data_dict[k].append(str(d.get(k)))
+            else:
+                data_dict[k].append(float(d[k].replace('%', '')))
+        """
         for k in d:
             val = str(d[k]) if k == 'updated' else float(d[k].replace('%', ''))
             if k not in data_dict:
@@ -355,8 +363,10 @@ async def industry_fund_chart(body: FundBody,
                     data_dict[k] = [val]
                 else:
                     data_dict['x_data'] = [val]
-
-    print(data_dict)
+        """
+    data_dict['x_data'] = data_dict.pop('updated')
+    print(len(data_dict['x_data']))
+    print('data_dict', data_dict)
     line = fundLine(title=f'產業資金', data_dict=data_dict)
     return line.dump_options_with_quotes()
 

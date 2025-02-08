@@ -41,10 +41,11 @@
 {% block jsContent %}
 
     <script>
-        var cur_chart = echarts.init(document.getElementById('chart'), 'white', {renderer: 'canvas'});
-        var cur_chart2 = echarts.init(document.getElementById('chart2'), 'white', {renderer: 'canvas'});
 
         $(document).ready(function () {
+            var cur_chart = echarts.init(document.getElementById('chart'), 'white', {renderer: 'canvas'});
+            var cur_chart2 = echarts.init(document.getElementById('chart2'), 'white', {renderer: 'canvas'});
+
             let clickCount = 0;
             let industry_list = [];
             $('.btn-industry').click(function () {
@@ -90,6 +91,7 @@
                         contentType: "application/json",
                         data: JSON.stringify(req_body),
                         success: function (result) {
+                            cur_chart.clear();
                             cur_chart.setOption(JSON.parse(result));
 
                         },
@@ -105,6 +107,7 @@
                         contentType: "application/json",
                         data: JSON.stringify(req_body),
                         success: function (result) {
+                            cur_chart2.clear();
                             cur_chart2.setOption(JSON.parse(result));
 
                         },

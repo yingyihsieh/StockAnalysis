@@ -152,5 +152,4 @@ def get_mcf(item_list):
         weight = str(bits_method(Decimal(w) / Decimal('16')))
         print(f'weight=', weight)
         result.append(mcf_spider(length, width, height, weight))
-        time.sleep(random.uniform(0.5, 1.1))
     return result

@@ -4,6 +4,7 @@
 # @Desc :
 import asyncio
 import time
+from typing import List
 
 import pendulum
 from decimal import Decimal
@@ -16,7 +17,7 @@ from utils.func import tsFormat, get_billable_weight_estimator, MyThread, get_mc
 from utils.task import world_finance_task, income_task
 from database import mongoClient, redisClient
 from charts.common import usd2nt_Line
-from requestBody import ShipBody, CompareBody
+from requestBody import ShipBody, CompareBody, DimensionRequest
 
 common_router = APIRouter()
 templates = Jinja2Templates(directory='templates')
@@ -265,26 +266,44 @@ async def ship_estimator(request: Request):
     )
 
 
+@common_router.post("/dimensions", response_model=List)
+def calculate_dimensions(request_data: DimensionRequest):
+    unique_dimensions = set()
+    min_length = request_data.min_length
+    max_length = request_data.max_length
+    min_width = request_data.min_width
+    max_width = request_data.max_width
+    min_height = request_data.min_height
+    max_height = request_data.max_height
+    for length in range(min_length, max_length+1):  # 长度范围
+        for width in range(min_width, max_width+1):  # 宽度范围
+            for height in range(min_height, max_height+1):  # 高度范围
+                dimension = tuple(sorted([length, width, height], reverse=True))
+                unique_dimensions.add(dimension)
+    dimensions = sorted([list(tup) for tup in unique_dimensions], reverse=True)
+    return dimensions
+
+
 @common_router.post('/ship/calculator')
 async def ship_price_calculator(body: ShipBody, rdb=Depends(redisClient)):
     rows = body.row_data
-    time.sleep(1)
     token = await rdb.get('bob:token')
     print(rows)
     print(token)
-    ship_result = []
+    ship_map = dict()
     for r in rows:
-        temp_result = []
+        nr = tuple(r)
+        ship_map[nr] = []
         for pt in [1, 2, 8]:
-            res = get_billable_weight_estimator(token=token, length=r[0], width=r[1], height=r[2], weight=r[3], quantity=r[-1], pack=pt)
-            temp_result.append(res)
-            time.sleep(0.3)
-        ship_result.append(temp_result)
+            res = get_billable_weight_estimator(token=token, length=r[0], width=r[1], height=r[2],
+                                                weight=body.weight, quantity=body.quantity, pack=pt)
+            ship_map[nr].append(res)
+            time.sleep(0.18)
 
     table_html = '<table class="table"><thead><tr><th>#</th><th>size</th><th>weight</th><th>quantity</th><th>ShipBobBox</th><th>ShipBobBM</th><th>ShipBobSIO</th><th>Amazon(3d)</th></tr></thead><tbody>{content}</tbody></table>'
     body_str = ''
-    for r in range(len(rows)):
-        body_str += f'<tr><th scope="row"><input type="checkbox" class="row-checkbox"></th><td>{rows[r][0]}x{rows[r][1]}x{rows[r][2]}</td><td>{rows[r][3]}</td><td>{rows[r][4]}</td><td>{ship_result[r][0]}</td><td>{ship_result[r][1]}</td><td>{ship_result[r][2]}</td><td>{rows[r][3]}oz,{rows[r][0]}x{rows[r][1]}x{rows[r][2]}</td></tr>'
+    for r in ship_map:
+        body_str += f'<tr><th scope="row"><input type="checkbox" class="row-checkbox"></th><td>{r[0]}x{r[1]}x{r[2]}</td><td>{body.weight}</td><td>{body.quantity}</td><td>{ship_map[r][0]}</td><td>{ship_map[r][1]}</td><td>{ship_map[r][2]}</td><td>{body.weight}oz,{r[0]}x{r[1]}x{r[2]}</td></tr>'
 
     table_str = table_html.format(content=body_str)
     return table_str

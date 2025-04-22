@@ -42,7 +42,18 @@ class FundBody(BaseModel):
 
 class ShipBody(BaseModel):
     row_data: List[List[int]]
+    quantity: int
+    weight: int
 
 
 class CompareBody(BaseModel):
     row_data: List[List[str]]
+
+
+class DimensionRequest(BaseModel):
+    min_length: int
+    max_length: int
+    min_width: int
+    max_width: int
+    min_height: int
+    max_height: int

@@ -8,49 +8,69 @@
 {% block mainContent %}
 
     <div class="panel panel-default">
-        <div class="panel-heading">
-            <div class="panel-title">
-                輸入面板
-                <button id="addBtn" type="button" class="btn btn-success" onclick="addInput(this)">增 加</button>
-                <button id="reduceBtn" type="button" class="btn btn-danger" onclick="reduceInput(this)">減 少</button>
-                <button id="priceBtn" type="button" class="btn btn-primary" onclick="calculatePrice(this)">計 算
-                </button>
+                <div class="panel-heading">尺寸規範</div>
+                <div class="panel-body">
+                    <form id="basicInfoForm">
+                        <div class="row">
+                            <div class="col-xs-4 form-group">
+                                <label for="length_min">長度下限 (in)</label>
+                                <input type="number" id="length_min" name="length_min" class="form-control" required>
+                            </div>
+                            <div class="col-xs-4 form-group">
+                                <label for="length_max">長度上限 (in)</label>
+                                <input type="number" id="length_max" name="length_max" class="form-control" required>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-xs-4 form-group">
+                                <label for="width_min">寬度下限 (in)</label>
+                                <input type="number" id="width_min" name="width_min" class="form-control" required>
+                            </div>
+                            <div class="col-xs-4 form-group">
+                                <label for="width_max">寬度上限 (in)</label>
+                                <input type="number" id="width_max" name="width_max" class="form-control" required>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-xs-4 form-group">
+                                <label for="height_min">高度下限 (in)</label>
+                                <input type="number" id="height_min" name="height_min" class="form-control" required>
+                            </div>
+                            <div class="col-xs-4 form-group">
+                                <label for="height_max">高度上限 (in)</label>
+                                <input type="number" id="height_max" name="height_max" class="form-control" required>
+                            </div>
+                        </div>
+
+                        <button type="button" class="btn btn-primary" onclick="sendData()">計 算</button>
+                    </form>
+                </div>
             </div>
 
-        </div>
-        <div id="panel-body" class="panel-body">
-            <div class="row" data-index="1">
-                <div class="col-lg-2">
-                    <div class="input-group">
-
-                        <input type="text" class="form-control" placeholder="length">
+    <div class="panel panel-default" id="showInfo">
+        <div class="panel-heading" id="showInfoHead">組合結果</div>
+        <div class="panel-body" id="showInfoBody">
+            <div class="row" id="resultRow">
+                <!-- 這裡將顯示結果 -->
+            </div>
+            <div class="row" style="display: none;" id="quantityRow">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="q_input">數量 (count)</label>
+                        <input id="q_input" type="number" class="form-control" required/>
                     </div>
                 </div>
-                <div class="col-lg-2">
-                    <div class="input-group">
-                        <input type="text" class="form-control" placeholder="width">
-
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="weight_input">重量 (oz)</label>
+                        <input id="weight_input" type="number" class="form-control" required/>
                     </div>
                 </div>
-                <div class="col-lg-2">
-                    <div class="input-group">
-                        <input type="text" class="form-control" placeholder="height">
-
-                    </div>
+                <div class="col-md-12">
+                    <button id="pricebtn" class="btn btn-success w-100" onclick="fetchPrice()">計算</button>
                 </div>
-                <div class="col-lg-2">
-                    <div class="input-group">
-                        <input type="text" class="form-control" placeholder="weight">
-
-                    </div>
-                </div>
-                <div class="col-lg-2">
-                    <div class="input-group">
-                        <input type="text" class="form-control" placeholder="quantity">
-
-                    </div>
-                </div>
-
             </div>
         </div>
     </div>
@@ -60,7 +80,14 @@
             <div id="billable-title" class="panel-title">Billable Detail </div>
         </div>
         <div id="billable-body" class="panel-body">
-
+            <div class="row" id="billableRow">
+                <!-- 這裡將顯示結果 -->
+            </div>
+            <div class="row" style="display: none;" id="billableBtnRow">
+                <div class="col-md-12">
+                    <button id="billablebtn" class="btn btn-success w-100" onclick="getSelectedRows()">比較</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -73,7 +100,8 @@
         </div>
     </div>
 
-    <div id="loading-indicator" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; z-index: 9999;">
+    <div id="loading-indicator"
+         style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; z-index: 9999;">
         <i class="fa fa-spinner fa-spin" style="font-size: 24px;"></i> 載入中...
     </div>
 
@@ -81,90 +109,109 @@
 
 {% block jsContent %}
     <script>
-        var rowCount = 1;
+    var sizeData = [];
 
-        function addInput(self) {
-            console.log(self)
-            if (rowCount < 5) {
-                rowCount++;
-                console.log(rowCount)
-                var newRow = '<div class="row" style="margin-top: 3px" data-index="' + rowCount.toString() + '"><div class="col-lg-2"><div class="input-group"><input type="text" class="form-control" placeholder="length"></div></div><div class="col-lg-2"><div class="input-group"><input type="text" class="form-control" placeholder="width"></div></div><div class="col-lg-2"><div class="input-group"><input type="text" class="form-control" placeholder="height"></div></div><div class="col-lg-2"><div class="input-group"><input type="text" class="form-control" placeholder="weight"></div></div><div class="col-lg-2"><div class="input-group"><input type="text" class="form-control" placeholder="quantity"></div></div></div>'
-                $("#panel-body").append(newRow);
-                if (rowCount == 5) {
-                    $("#addBtn").addClass("disabled")
-                }
-                if (rowCount > 2) {
-                    if ($("#reduceBtn").hasClass('disabled')) {
-                        $("#reduceBtn").removeClass('disabled')
-                    }
-                }
-            }
-        }
+    function sendData() {
+        const minLength = document.getElementById('length_min').value;
+        const maxLength = document.getElementById('length_max').value;
+        const minWidth = document.getElementById('width_min').value;
+        const maxWidth = document.getElementById('width_max').value;
+        const minHeight = document.getElementById('height_min').value;
+        const maxHeight = document.getElementById('height_max').value;
 
-        function reduceInput(self) {
-            if (2 < rowCount < 6) {
-                rowCount--;
-                $("#panel-body .row").eq(-1).remove()
-                console.log(rowCount)
-                if (rowCount == 1) {
-                    $("#reduceBtn").addClass("disabled")
-                }
-                if (rowCount < 5) {
-                    if ($("#addBtn").hasClass('disabled')) {
-                        $("#addBtn").removeClass('disabled')
-                    }
-                }
-            }
-        }
-
-        function calculatePrice(self) {
-            const rows = $("#panel-body .row")
-            const rowDataArrays = []
-            rows.each(function () {
-                const inputs = $(this).find('input'); // 取得當前 row 的所有 input
-                const rowValues = [];
-
-                // 遍歷每一個 input，並取得其值
-                inputs.each(function () {
-                    var basic_val = $(this).val();
-                    if (!basic_val) {
-                        alert('輸入不得為空')
-                        return
-                    }
-                    rowValues.push(basic_val);
-                });
-
-                // 將 row 的值加入結果陣列
-                rowDataArrays.push(rowValues);
+        fetch('/dimensions', {  // FastAPI 路径
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                min_length: parseInt(minLength),
+                max_length: parseInt(maxLength),
+                min_width: parseInt(minWidth),
+                max_width: parseInt(maxWidth),
+                min_height: parseInt(minHeight),
+                max_height: parseInt(maxHeight),
             })
-            console.log("所有行的数据:", rowDataArrays); // 打印出来供调试
-            var req_body = {"row_data": rowDataArrays,}
-            $("#loading-indicator").show(); // 显示加载指示器
-            $.ajax({
-                url: "/ship/calculator",
-                type: "post",
-                dataType: "JSON",
-                contentType: "application/json",
-                data: JSON.stringify(req_body),
-                success: function (result) {
-                    console.log(result)
-                    $("#billable-body").empty().append(result)
-                    if ($("#billable-title").find(".compare-btn").length === 0) {
-                        const compair_btn = '<button id="compair-btn" class="btn btn-primary compare-btn" onclick="getSelectedRows(this)">比 較</button>';
-                        $("#billable-title").append(compair_btn);
-                    }
-                },
-                error: function (jqXHR, textStatus, errorThrown) {
-                    alert('api fail')
-                },
-                complete: function () {
-                    // 隐藏加载指示器
-                    $("#loading-indicator").hide();
+        }).then(response => response.json())
+            .then(data => displayResults(data))
+            .catch(error => console.error('Error:', error));
+    }
+
+    function displayResults(results) {
+        console.log(results)
+        const resultRow = document.getElementById('resultRow');
+        const quantityRow = document.getElementById('quantityRow');
+
+        if (results.length === 0) {
+            // 如果沒有結果，隱藏輸入框和按鈕
+            quantityRow.style.display = 'none';
+            return;
+        }
+        sizeData = results;
+        resultRow.innerHTML = ''; // 清空之前的結果
+
+        // 每行顯示 3 個數據
+        for (let i = 0; i < results.length; i += 3) {
+            let rowDiv = document.createElement('div');
+            rowDiv.className = 'row'; // 新建一行
+
+            for (let j = 0; j < 3; j++) {
+                if (i + j < results.length) {
+                    let colDiv = document.createElement('div');
+                    colDiv.className = 'col-md-4'; // 每個數據佔一個 1/3 的列
+                    colDiv.innerHTML = `<div class="list-group-item">${results[i + j][0]} x ${results[i + j][1]} x ${results[i + j][2]}</div>`;
+                    rowDiv.appendChild(colDiv);
                 }
-            });
+            }
+
+            resultRow.appendChild(rowDiv); // 將新行添加到結果區域
         }
 
-        function getSelectedRows() {
+        quantityRow.style.display = 'block'; // 顯示輸入框和按鈕
+    }
+
+    function fetchPrice() {
+        var quantity = parseInt($('#q_input').val());
+        var weight = parseInt($('#weight_input').val());
+        if (!quantity || !weight) {
+            alert('請輸入數量與重量')
+            return
+        }
+        $("#loading-indicator").show();
+        $.ajax({
+            url: '/ship/calculator',
+            type: 'POST',
+            contentType: 'application/json', // 设置 Content-Type 头部
+            data: JSON.stringify({         // 将对象转换为 JSON 字符串
+                row_data: sizeData,
+                quantity: quantity,
+                weight: weight
+            }),
+            success: function (response) {
+                const billableBtnRow = document.getElementById('billableBtnRow');
+                console.log('成功:', response); // 成功回调函数处理返回的数据
+                if (response.length === 0) {
+                    // 如果沒有結果，隱藏輸入框和按鈕
+                    quantityRow.style.display = 'none';
+                    return;
+                }
+                $("#billableRow").empty().append(response)
+
+                billableBtnRow.style.display = 'block';
+
+            },
+            error: function (xhr, status, error) {
+                console.error('错误:', error); // 错误回调函数记录错误信息
+            },
+            complete: function () {
+                // 隐藏加载指示器
+                $("#loading-indicator").hide();
+            }
+        });
+    }
+
+
+    function getSelectedRows() {
             const selectedRows = [];
 
             // 取得所有勾選的 checkbox
@@ -207,5 +254,5 @@
             });
         }
 
-    </script>
+</script>
 {% endblock %}

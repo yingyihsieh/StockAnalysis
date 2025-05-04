@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Task Queue Viewer</title>
+    <!-- Bootstrap CSS -->
+    <link href="{{ url_for('static', path='plugins/bootstrap-3.4.1/css/bootstrap.css')}}" rel="stylesheet">
+
+    <style>
+        body {
+            padding: 20px;
+        }
+
+        table {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>請選擇你的標準尺寸</h2>
+    <select id="taskSelector" class="form-control">
+        {% for task_name in task_names %}
+        <option value="{{ task_name }}">{{ task_name }}</option>
+        {% endfor %}
+    </select>
+    <div id="beforeDiffer" style="display: block">
+        {{ html_str|safe }}
+
+        <button class="btn btn-primary" onclick="getStandard()">送 出</button>
+    </div>
+
+    <div id="afterDiffer" style="display: none">
+    </div>
+
+</div>
+
+<script src="{{ url_for('static', path='js/jquery-3.6.0.min.js') }}"></script>
+<script src="{{ url_for('static', path='js/jquery-ui.min.js') }}"></script>
+<script src="{{ url_for('static', path='plugins/bootstrap-3.4.1/js/bootstrap.min.js') }}"></script>
+
+
+<script>
+    $(document).ready(function () {
+        $('#taskSelector').change(function() {
+            const selectedTask = $(this).val();
+            console.log('****', selectedTask)
+             window.location.href = `/detail?key=${selectedTask}`;
+        })
+    });
+</script>
+<script>
+    function getStandard() {
+        var standard_arr = [];
+        var total_num = document.querySelectorAll('table').length;
+        var checkboxes = document.querySelectorAll('input[type="radio"]:checked');
+        console.log('***', total_num, checkboxes)
+        checkboxes.forEach(checkbox => {
+            let result = checkbox.value.split(",");
+            console.log('===', result)
+            standard_arr.push(result)
+        });
+        if (standard_arr.length < total_num) {
+            alert('請勾選尺寸')
+            return
+        }
+        $.ajax({
+            url: '/comparator',
+            type: 'POST',
+            contentType: 'application/json', // 设置 Content-Type 头部
+            data: JSON.stringify({         // 将对象转换为 JSON 字符串
+                row_data: standard_arr,
+                task_name: "{{ task_names[0] }}"
+            }),
+            success: function (response) {
+                alert('計算中')
+                console.log(response)
+                checkboxes.forEach(checkbox => {
+                    checkbox.checked = false;
+                });
+                const beforeDifferBlock = document.getElementById('beforeDiffer');
+                const afterDifferBlock = document.getElementById('afterDiffer');
+                beforeDifferBlock.style.display = 'none'
+                afterDifferBlock.innerHTML = response
+                afterDifferBlock.style.display = 'block'
+            },
+            error: function (xhr, status, error) {
+                console.error('错误:', error); // 错误回调函数记录错误信息
+            },
+        });
+    }
+</script>
+</body>
+</html>

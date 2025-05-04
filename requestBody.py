@@ -3,7 +3,8 @@
 # @Author : Andy Hsieh
 # @Desc :
 from pydantic import BaseModel
-from typing import List
+from typing import List, Any
+
 
 class GroupBody(BaseModel):
     title: str
@@ -41,13 +42,12 @@ class FundBody(BaseModel):
 
 
 class ShipBody(BaseModel):
-    row_data: List[List[int]]
-    quantity: int
-    weight: int
+    row_data: List[Any]
 
 
 class CompareBody(BaseModel):
-    row_data: List[List[str]]
+    row_data: List[Any]
+    task_name: str
 
 
 class DimensionRequest(BaseModel):
@@ -57,3 +57,6 @@ class DimensionRequest(BaseModel):
     max_width: int
     min_height: int
     max_height: int
+    weight: int
+    q_min: int
+    q_max: int

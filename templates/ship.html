@@ -1,123 +1,241 @@
-{% extends 'demo.html' %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FastAPI HTML Example</title>
+    <!-- 引入 Bootstrap CSS -->
+    <link href="{{ url_for('static', path='plugins/bootstrap-3.4.1/css/bootstrap.css')}}" rel="stylesheet">
 
-{% block pagetitle %}
-    <title>Ship Estimator</title>
-{% endblock %}
+    <style>
+        .group-container {
+            margin-top: 20px;
+        }
+
+        .remove-btn {
+            cursor: pointer;
+            color: red;
+            font-weight: bold;
+            margin-left: 5px;
+        }
+
+        #assignButton {
+            margin-top: 5px;
+        }
+
+        .modal-body {
+            display: flex;
+            justify-content: center; /* 水平居中 */
+            align-items: center; /* 垂直居中 */
+            height: 100px; /* 设置高度以便观察效果 */
+        }
+    </style>
+    <style>
+        .group-container {
+            display: flex;
+            flex-direction: column; /* 让 header 和 #groups 垂直排列 */
+        }
+
+        .header {
+            display: flex;
+            align-items: center; /* 让 h4 和 button 垂直居中对齐 */
+            justify-content: space-between; /* 让 h4 和 button 水平两端对齐 */
+        }
+
+        #groups {
+            margin-top: 10px; /* 可选：为 #groups 添加一些间距 */
+        }
+    </style>
+    <style>
+        .notification-badge {
+            position: relative;
+            top: -7px; /* 调整垂直位置 */
+            left: 5px; /* 调整水平距离 */
+            font-size: smaller;
+        }
+
+        .image-button {
+            background: none; /* 移除默认按钮背景 */
+            border: none; /* 移除默认边框 */
+            cursor: pointer; /* 鼠标悬停时显示为手型 */
+            outline: none; /* 点击时移除默认的焦点轮廓 */
+        }
+
+        /* 设置图片样式 */
+        .image-button img {
+            width: 45px; /* 图片宽度 */
+            height: 45px; /* 图片高度 */
+        }
+
+        /* 鼠标悬停时的效果（可选） */
+        .image-button:hover img {
+            transform: scale(1.1); /* 放大图片 */
+            transition: transform 0.3s ease; /* 添加平滑过渡效果 */
+        }
+
+    </style>
+</head>
+<body>
+<!-- 横向导航栏 -->
+<nav class="navbar navbar-default">
+    <div class="container-fluid">
+        <div class="navbar-header" style="margin-bottom: 5px">
+            <a class="navbar-brand" href="/">文穎數據分析系統</a>
+        </div>
+        <ul class="nav navbar-nav navbar-right">
+
+            <button id="notificationBell" class="image-button">
+                <img src="https://cdn-icons-png.freepik.com/512/2772/2772343.png?ga=GA1.1.946664430.1746028488"
+                     alt="Custom Button">
+                <sup id="badgeCount" class="label label-danger notification-badge">0</sup>
+            </button>
 
 
-{% block mainContent %}
+        </ul>
+    </div>
+</nav>
 
+<div class="container">
     <div class="panel panel-default">
-                <div class="panel-heading">尺寸規範</div>
-                <div class="panel-body">
-                    <form id="basicInfoForm">
-                        <div class="row">
-                            <div class="col-xs-4 form-group">
-                                <label for="length_min">長度下限 (in)</label>
-                                <input type="number" id="length_min" name="length_min" class="form-control" required>
-                            </div>
-                            <div class="col-xs-4 form-group">
-                                <label for="length_max">長度上限 (in)</label>
-                                <input type="number" id="length_max" name="length_max" class="form-control" required>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-xs-4 form-group">
-                                <label for="width_min">寬度下限 (in)</label>
-                                <input type="number" id="width_min" name="width_min" class="form-control" required>
-                            </div>
-                            <div class="col-xs-4 form-group">
-                                <label for="width_max">寬度上限 (in)</label>
-                                <input type="number" id="width_max" name="width_max" class="form-control" required>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-xs-4 form-group">
-                                <label for="height_min">高度下限 (in)</label>
-                                <input type="number" id="height_min" name="height_min" class="form-control" required>
-                            </div>
-                            <div class="col-xs-4 form-group">
-                                <label for="height_max">高度上限 (in)</label>
-                                <input type="number" id="height_max" name="height_max" class="form-control" required>
-                            </div>
-                        </div>
-
-                        <button type="button" class="btn btn-primary" onclick="sendData()">計 算</button>
-                    </form>
+        <div class="panel-heading">尺寸規範</div>
+        <div class="panel-body">
+            <form id="basicInfoForm">
+                <div class="row">
+                    <div class="col-xs-4 form-group">
+                        <label for="length_min">長度下限 (in)</label>
+                        <input type="number" id="length_min" name="length_min" class="form-control" required>
+                    </div>
+                    <div class="col-xs-4 form-group">
+                        <label for="length_max">寬度下限 (in)</label>
+                        <input type="number" id="width_min" name="width_min" class="form-control" required>
+                    </div>
+                    <div class="col-xs-4 form-group">
+                        <label for="length_max">高度下限 (in)</label>
+                        <input type="number" id="height_min" name="height_min" class="form-control" required>
+                    </div>
                 </div>
-            </div>
 
+                <div class="row">
+                    <div class="col-xs-4 form-group">
+                        <label for="length_max">長度上限 (in)</label>
+                        <input type="number" id="length_max" name="length_max" class="form-control" required>
+                    </div>
+
+                    <div class="col-xs-4 form-group">
+                        <label for="width_max">寬度上限 (in)</label>
+                        <input type="number" id="width_max" name="width_max" class="form-control" required>
+                    </div>
+
+                    <div class="col-xs-4 form-group">
+                        <label for="height_max">高度上限 (in)</label>
+                        <input type="number" id="height_max" name="height_max" class="form-control" required>
+                    </div>
+
+                </div>
+
+                <div class="row">
+                    <div class="col-xs-4 form-group">
+                        <label for="weight">重 量(oz)</label>
+                        <input type="number" id="weight" name="weight" class="form-control" required>
+                    </div>
+                    <div class="col-xs-4 form-group">
+                        <label for="q_min">數 量(個)下限</label>
+                        <input type="number" id="q_min" name="q_min" class="form-control" required>
+                    </div>
+                    <div class="col-xs-4 form-group">
+                        <label for="q_max">數 量(個)上限</label>
+                        <input type="number" id="q_max" name="q_max" class="form-control" required>
+                    </div>
+                </div>
+
+                <button type="button" class="btn btn-primary" onclick="sendData()">計 算</button>
+            </form>
+        </div>
+    </div>
     <div class="panel panel-default" id="showInfo">
-        <div class="panel-heading" id="showInfoHead">組合結果</div>
+        <div class="panel-heading" id="showInfoHead">
+            <h4>尺寸列表</h4>
+            <button id="checkAll" class="btn btn-primary" onclick="check_func()">一鍵勾選</button>
+        </div>
         <div class="panel-body" id="showInfoBody">
-            <div class="row" id="resultRow">
-                <!-- 這裡將顯示結果 -->
+            <div class="row" id="resultRow" style="margin-left: 5px">
+
             </div>
-            <div class="row" style="display: none;" id="quantityRow">
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label for="q_input">數量 (count)</label>
-                        <input id="q_input" type="number" class="form-control" required/>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label for="weight_input">重量 (oz)</label>
-                        <input id="weight_input" type="number" class="form-control" required/>
-                    </div>
-                </div>
-                <div class="col-md-12">
-                    <button id="pricebtn" class="btn btn-success w-100" onclick="fetchPrice()">計算</button>
+            <div class="row" style="display: none;" id="assignRow">
+                <div class="col-xs-4 form-group">
+                        <label for="taskName">任務名稱</label>
+                        <input type="text" id="taskName" name="taskName" class="form-control" required>
                 </div>
             </div>
+            <button class="btn btn-primary" id="assignButton">建立任務</button>
+
         </div>
     </div>
 
-    <div class="panel panel-default">
-        <div class="panel-heading">
-            <div id="billable-title" class="panel-title">Billable Detail </div>
-        </div>
-        <div id="billable-body" class="panel-body">
-            <div class="row" id="billableRow">
-                <!-- 這裡將顯示結果 -->
-            </div>
-            <div class="row" style="display: none;" id="billableBtnRow">
-                <div class="col-md-12">
-                    <button id="billablebtn" class="btn btn-success w-100" onclick="getSelectedRows()">比較</button>
+    <div class="modal fade" id="assignModal" tabindex="-1" role="dialog" aria-labelledby="assignModalLabel">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                            aria-hidden="true">&times;</span>
+                    </button>
+                    <h4 class="modal-title" id="assignModalLabel" style="text-align: center"><b>確認是否開始詢價</b>
+                    </h4>
+                </div>
+                <div class="modal-body">
+                    <button class="btn btn-success d-block mx-auto" id="confirmButton" onclick="addJob()">確認</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="panel panel-default">
-        <div class="panel-heading">
-            <div class="panel-title">comparison</div>
-        </div>
-        <div id="compair-body" class="panel-body">
-
+    <div id="notificationModal" class="modal fade" role="dialog">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">Notifications</h4>
+                </div>
+                <div class="modal-body">
+                    <ul id="notificationList" class="list-group"></ul>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                </div>
+            </div>
         </div>
     </div>
+</div>
 
-    <div id="loading-indicator"
-         style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; z-index: 9999;">
-        <i class="fa fa-spinner fa-spin" style="font-size: 24px;"></i> 載入中...
-    </div>
 
-{% endblock %}
+<script src="{{ url_for('static', path='js/jquery-3.6.0.min.js') }}"></script>
+<script src="{{ url_for('static', path='js/jquery-ui.min.js') }}"></script>
+<script src="{{ url_for('static', path='plugins/bootstrap-3.4.1/js/bootstrap.min.js') }}"></script>
 
-{% block jsContent %}
-    <script>
+
+<script>
     var sizeData = [];
 
     function sendData() {
-        const minLength = document.getElementById('length_min').value;
-        const maxLength = document.getElementById('length_max').value;
-        const minWidth = document.getElementById('width_min').value;
-        const maxWidth = document.getElementById('width_max').value;
-        const minHeight = document.getElementById('height_min').value;
-        const maxHeight = document.getElementById('height_max').value;
+        const minLength = parseInt(document.getElementById('length_min').value);
+        const maxLength = parseInt(document.getElementById('length_max').value);
+        const minWidth = parseInt(document.getElementById('width_min').value);
+        const maxWidth = parseInt(document.getElementById('width_max').value);
+        const minHeight = parseInt(document.getElementById('height_min').value);
+        const maxHeight = parseInt(document.getElementById('height_max').value);
+        const weight = parseInt(document.getElementById('weight').value);
+        const q_min = parseInt(document.getElementById('q_min').value);
+        const q_max = parseInt(document.getElementById('q_max').value);
+
+        if (minLength > maxLength || minWidth > maxWidth || minHeight > maxHeight) {
+            console.log(minLength)
+            console.log(maxLength)
+            console.log(minWidth)
+            console.log(maxWidth)
+            console.log(minHeight)
+            console.log(maxHeight)
+            alert("請注意上下限位置")
+            return
+        }
 
         fetch('/dimensions', {  // FastAPI 路径
             method: 'POST',
@@ -125,12 +243,15 @@
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                min_length: parseInt(minLength),
-                max_length: parseInt(maxLength),
-                min_width: parseInt(minWidth),
-                max_width: parseInt(maxWidth),
-                min_height: parseInt(minHeight),
-                max_height: parseInt(maxHeight),
+                min_length: minLength,
+                max_length: maxLength,
+                min_width: minWidth,
+                max_width: maxWidth,
+                min_height: minHeight,
+                max_height: maxHeight,
+                weight: weight,
+                q_min: q_min,
+                q_max: q_max
             })
         }).then(response => response.json())
             .then(data => displayResults(data))
@@ -140,11 +261,11 @@
     function displayResults(results) {
         console.log(results)
         const resultRow = document.getElementById('resultRow');
-        const quantityRow = document.getElementById('quantityRow');
+        const assignRow = document.getElementById('assignRow');
 
         if (results.length === 0) {
             // 如果沒有結果，隱藏輸入框和按鈕
-            quantityRow.style.display = 'none';
+            assignRow.style.display = 'none';
             return;
         }
         sizeData = results;
@@ -158,101 +279,142 @@
             for (let j = 0; j < 3; j++) {
                 if (i + j < results.length) {
                     let colDiv = document.createElement('div');
-                    colDiv.className = 'col-md-4'; // 每個數據佔一個 1/3 的列
-                    colDiv.innerHTML = `<div class="list-group-item">${results[i + j][0]} x ${results[i + j][1]} x ${results[i + j][2]}</div>`;
+                    colDiv.className = 'col-xs-4 form-group'; // 每個數據佔一個 1/3 的列
+                    colDiv.innerHTML = `<input type="checkbox" value="${results[i + j][0]} x ${results[i + j][1]} x ${results[i + j][2]} x ${results[i + j][3]} x ${results[i + j][4]}">${results[i + j][0]} x ${results[i + j][1]} x ${results[i + j][2]} x ${results[i + j][3]} x ${results[i + j][4]}`;
                     rowDiv.appendChild(colDiv);
                 }
             }
 
             resultRow.appendChild(rowDiv); // 將新行添加到結果區域
         }
-
-        quantityRow.style.display = 'block'; // 顯示輸入框和按鈕
+        document.getElementById('length_min').value = '';
+        document.getElementById('length_max').value = '';
+        document.getElementById('width_min').value = '';
+        document.getElementById('width_max').value = '';
+        document.getElementById('height_min').value = '';
+        document.getElementById('height_max').value = '';
+        document.getElementById('weight').value = '';
+        document.getElementById('q_min').value = '';
+        document.getElementById('q_max').value = '';
+        assignRow.style.display = 'block'; // 顯示輸入框和按鈕
     }
 
-    function fetchPrice() {
-        var quantity = parseInt($('#q_input').val());
-        var weight = parseInt($('#weight_input').val());
-        if (!quantity || !weight) {
-            alert('請輸入數量與重量')
+    function check_func() {
+        // 获取所有的checkbox元素
+        var checkboxes = document.querySelectorAll('input[type="checkbox"]');
+        // 获取当前按钮的状态
+        var isAllChecked = true;
+        checkboxes.forEach(function (checkbox) {
+            if (!checkbox.checked) {
+                isAllChecked = false;
+            }
+        });
+
+        // 根据当前状态设置所有checkbox的checked属性
+        checkboxes.forEach(function (checkbox) {
+            checkbox.checked = !isAllChecked;
+        });
+    }
+
+
+    function addJob() {
+        var sizeArray = [];
+        var checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
+        var taskName = document.getElementById('taskName').value;
+
+        checkboxes.forEach(checkbox => {
+            console.log(checkbox.value);
+            let result = checkbox.value.split(" x ");
+            sizeArray.push(result.map(Number));
+        });
+        sizeArray.forEach(arr => {
+            arr.push(taskName)
+        })
+
+        if (sizeArray.length === 0) {
+            alert('請勾選尺寸樣式')
             return
         }
-        $("#loading-indicator").show();
+        console.log('===', sizeArray)
         $.ajax({
             url: '/ship/calculator',
             type: 'POST',
             contentType: 'application/json', // 设置 Content-Type 头部
             data: JSON.stringify({         // 将对象转换为 JSON 字符串
-                row_data: sizeData,
-                quantity: quantity,
-                weight: weight
+                row_data: sizeArray,
             }),
             success: function (response) {
-                const billableBtnRow = document.getElementById('billableBtnRow');
-                console.log('成功:', response); // 成功回调函数处理返回的数据
-                if (response.length === 0) {
-                    // 如果沒有結果，隱藏輸入框和按鈕
-                    quantityRow.style.display = 'none';
-                    return;
-                }
-                $("#billableRow").empty().append(response)
-
-                billableBtnRow.style.display = 'block';
-
+                alert('新增任務成功')
+                $("#assignModal").modal("hide");
+                document.getElementById('taskName').value = '';
             },
             error: function (xhr, status, error) {
                 console.error('错误:', error); // 错误回调函数记录错误信息
             },
-            complete: function () {
-                // 隐藏加载指示器
-                $("#loading-indicator").hide();
-            }
         });
     }
-
-
-    function getSelectedRows() {
-            const selectedRows = [];
-
-            // 取得所有勾選的 checkbox
-            $('.row-checkbox:checked').each(function() {
-                const row = $(this).closest('tr'); // 取得該 checkbox 所在的行
-                const rowData = [];
-
-                // 取得該行的所有 td，並將其內容轉為陣列
-                row.find('td').each(function() {
-                    rowData.push($(this).text()); // 將 td 的內容加入 rowData 陣列
-                });
-
-                selectedRows.push(rowData); // 將該行的數據加入結果陣列
-            });
-            if (selectedRows.length === 0) {
-                alert('請勾選比較對象')
-                return
-            }
-            console.log(selectedRows); // 輸出選取的行數據
-            var req_body = {"row_data": selectedRows,}
-            $("#loading-indicator").show(); // 显示加载指示器
-            $.ajax({
-                url: "/ship/comparator",
-                type: "post",
-                dataType: "JSON",
-                contentType: "application/json",
-                data: JSON.stringify(req_body),
-                success: function (result) {
-                    console.log(result)
-                    $("#compair-body").empty().append(result)
-
-                },
-                error: function (jqXHR, textStatus, errorThrown) {
-                    alert('api fail')
-                },
-                complete: function () {
-                    // 隐藏加载指示器
-                    $("#loading-indicator").hide();
-                }
-            });
-        }
-
 </script>
-{% endblock %}
+
+<script>
+    $(document).ready(function () {
+
+        let badgeCounter = 0;
+
+        var eventSource = new EventSource("{{url_for('stream_notifications')}}");
+        eventSource.onopen = function (event) {
+            // open事件
+            console.log("open event");
+        };
+        // 处理接收到的新通知
+        eventSource.onmessage = function (event) {
+            console.log(':::', event)
+            const notificationData = JSON.parse(event.data);
+            console.log(':::', notificationData)
+            if (notificationData.type === 'new_message') {
+                // 更新徽章计数器
+                badgeCounter++;
+                $('#badgeCount').text(badgeCounter);
+
+                // 添加到未读列表顶部
+                const listItem = `<li class="list-group-item">${notificationData.content}</li>`;
+                $('#notificationList').prepend(listItem);
+            }
+
+        };
+
+        eventSource.onerror = function (event) {
+            console.log(event)
+            switch (event.target.readyState) {
+                // 0
+                case EventSource.CONNECTING:
+                    console.log('onerr connecting ' + new Date().toString());
+                    break;
+                // 2
+                case EventSource.CLOSED:
+                    console.log('onerr closed ' + new Date().toString());
+                    break;
+                default:
+                    break;
+            }
+        };
+
+        // 打开模态框时重置徽章数量
+        $('#notificationBell').click(function () {
+            $("#notificationModal").modal("show");
+            ;
+            badgeCounter = 0; // 清零
+            $('#badgeCount').text('0');
+        });
+
+        $('#assignButton').click(function () {
+            $("#assignModal").modal("show");
+
+        });
+
+        window.stopSSE = function () {
+            eventSource.close();
+        };
+    });
+</script>
+</body>
+</html>

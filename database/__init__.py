@@ -23,11 +23,9 @@ async def redisClient() -> Redis:
             url=REDISURI,
             decode_responses=True
         )
-        # cache_pool = ConnectionPool.from_url(
-        #     url='redis://192.168.10.67:6379/15',
-        #     decode_responses=True
-        # )
+
         cache = Redis(connection_pool=cache_pool)
-        yield cache
+        return cache
     except:
-        pass
+        await cache.close()
+        await cache_pool.disconnect()

@@ -3,8 +3,8 @@
 # @Author : Andy Hsieh
 # @Desc :
 import asyncio
-import time
-from typing import List
+import time,json
+from typing import List, Optional
 
 import pendulum
 from decimal import Decimal
@@ -12,13 +12,15 @@ from fastapi.templating import Jinja2Templates
 from fastapi import APIRouter, BackgroundTasks, Depends, Path, Query
 from fastapi.requests import Request
 from sse_starlette.sse import EventSourceResponse
+from starlette.responses import StreamingResponse
+
 from settings import msg_content
-from utils.func import tsFormat, get_billable_weight_estimator, MyThread, get_mcf
+from utils.func import tsFormat, list_to_nested_dict
 from utils.task import world_finance_task, income_task
 from database import mongoClient, redisClient
 from charts.common import usd2nt_Line
 from requestBody import ShipBody, CompareBody, DimensionRequest
-
+notifications = asyncio.Queue()
 common_router = APIRouter()
 templates = Jinja2Templates(directory='templates')
 
@@ -64,6 +66,29 @@ async def create_message(content: str = Query(...)):
         return {'code': 1, 'data': None, 'msg': 'send success'}
     except:
         return {'code': 0, 'data': None, 'msg': 'send fail'}
+
+
+@common_router.post("/send_notification/")
+async def send_notification(notification: dict):
+    """模拟服务器接收新通知并广播"""
+    print('received message', notification)
+    await notifications.put(json.dumps(notification))
+    return {"status": "success"}
+
+
+@common_router.get("/stream_notifications/")
+async def stream_notifications():
+    """提供SSE流服务"""
+
+    async def event_generator():
+        while True:
+            notification = await notifications.get()
+            print('send message', notification)
+            yield f"data: {notification}\n\n"
+            await asyncio.sleep(1)
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
+
 
 
 @common_router.get('/test')
@@ -275,95 +300,133 @@ def calculate_dimensions(request_data: DimensionRequest):
     max_width = request_data.max_width
     min_height = request_data.min_height
     max_height = request_data.max_height
+    weight = request_data.weight
+    q_min = request_data.q_min
+    q_max = request_data.q_max
     for length in range(min_length, max_length+1):  # 长度范围
         for width in range(min_width, max_width+1):  # 宽度范围
             for height in range(min_height, max_height+1):  # 高度范围
                 dimension = tuple(sorted([length, width, height], reverse=True))
                 unique_dimensions.add(dimension)
     dimensions = sorted([list(tup) for tup in unique_dimensions], reverse=True)
-    return dimensions
+
+    result = []
+    for q in range(q_min, q_max+1):
+        for d in dimensions:
+            r = d.copy()
+            r += [q, weight]
+            result.append(r)
+    return result
 
 
 @common_router.post('/ship/calculator')
 async def ship_price_calculator(body: ShipBody, rdb=Depends(redisClient)):
     rows = body.row_data
-    token = await rdb.get('bob:token')
-    print(rows)
-    print(token)
-    ship_map = dict()
     for r in rows:
-        nr = tuple(r)
-        ship_map[nr] = []
-        for pt in [1, 2, 8]:
-            res = get_billable_weight_estimator(token=token, length=r[0], width=r[1], height=r[2],
-                                                weight=body.weight, quantity=body.quantity, pack=pt)
-            ship_map[nr].append(res)
-            time.sleep(0.18)
-
-    table_html = '<table class="table"><thead><tr><th>#</th><th>size</th><th>weight</th><th>quantity</th><th>ShipBobBox</th><th>ShipBobBM</th><th>ShipBobSIO</th><th>Amazon(3d)</th></tr></thead><tbody>{content}</tbody></table>'
-    body_str = ''
-    for r in ship_map:
-        body_str += f'<tr><th scope="row"><input type="checkbox" class="row-checkbox"></th><td>{r[0]}x{r[1]}x{r[2]}</td><td>{body.weight}</td><td>{body.quantity}</td><td>{ship_map[r][0]}</td><td>{ship_map[r][1]}</td><td>{ship_map[r][2]}</td><td>{body.weight}oz,{r[0]}x{r[1]}x{r[2]}</td></tr>'
-
-    table_str = table_html.format(content=body_str)
-    return table_str
+        await rdb.rpush(f"task:{int(time.time())}", str(r))
+    return 'ok'
 
 
 
-@common_router.post('/ship/comparator')
+@common_router.get("/detail")
+async def detail(request: Request, key: Optional[str] = Query(default=''), rdb=Depends(redisClient)):
+
+    task_names = await rdb.keys('result*')
+    task_names = [name for name in task_names]
+    task_names.sort()
+    if not key:
+        task_queue = await rdb.lrange(task_names[0], 0, -1)
+    else:
+        task_names.remove(key)
+        task_names = [key] + task_names
+        task_queue = await rdb.lrange(key, 0, -1)
+
+    tasks = [eval(d) for d in task_queue]
+    result_data, quantity_list, og_size_list = list_to_nested_dict(data=tasks)
+    quantity_list.sort()
+    og_size_list.sort()
+
+    html_list = []
+    for q in quantity_list:
+        tbody_str = ''
+        for s in og_size_list:
+            size_part = f'<td><label><input type="radio" name="og-size-{q}" value="{s},{q}"> {s}</label></td>'
+            box = f"<td>{result_data[q][s]['Box']['Box']['size']} / {result_data[q][s]['Box']['Box']['weight']}(oz) / ${result_data[q][s]['Box']['Box']['price']}</td>"
+            bb = f"<td>{result_data[q][s]['Bubble Mailer']['Bubble Mailer']['size']} / {result_data[q][s]['Bubble Mailer']['Bubble Mailer']['weight']}(oz) / ${result_data[q][s]['Bubble Mailer']['Bubble Mailer']['price']}</td>"
+            sio = f"<td>{result_data[q][s]['Ship in Own']['Ship in Own']['size']} / {result_data[q][s]['Ship in Own']['Ship in Own']['weight']}(oz) / ${result_data[q][s]['Ship in Own']['Ship in Own']['price']}</td>"
+            tbody_str += f'<tr>{size_part}{box}{bb}{sio}</tr>'
+        html_list.append(f'<div class="panel panel-default" style="margin-top: 8px"><div class="panel-heading"><h4>數量 {q} 區塊</h4></div><div class="panel-body"><table id="taskTable{ q }" class="table table-striped table-bordered"><thead><tr><th>OG-SIZE</th><th>Box</th><th>Bubble Mailer</th><th>Ship in Own</th></tr></thead><tbody>{tbody_str}</tbody></table></div></div>')
+    html_str = '\n'.join(html_list)
+    return templates.TemplateResponse("ship_detail.html",
+                                      {
+                                          "request": request,
+                                          "task_names": task_names,
+                                          "html_str": html_str,
+                                      })
+
+
+
+@common_router.post('/comparator')
 async def ship_price_calculator(body: CompareBody,
                                 rdb=Depends(redisClient)
                                 ):
-    rows = body.row_data
-    print('rows=', rows)
-    ship_weight_array = list()
-    amazon_weight_array = list()
-    for r in rows:
-        ship_weight_array.append([int(Decimal(r[3].split(',')[0].replace('oz', ''))), int(Decimal(r[4].split(',')[0].replace('oz', ''))),int(Decimal(r[5].split(',')[0].replace('oz', '')))])
-        amazon_weight_array.append(r[6])
-    print(amazon_weight_array)
-    t = MyThread(get_mcf, (amazon_weight_array,))
-    t.start()
-    print('swa= ', ship_weight_array)
-    zone_price_list = []
-    async with rdb.pipeline(transaction=True) as pipe:
-        zone_weight = await pipe.lrange("bob:zone_weight", 0, -1).execute()
-        if zone_weight:
-            zone_weight = zone_weight[0]
-        else:
-            raise ValueError('miss zw')
-        for weight_list in ship_weight_array:
-            for w in weight_list:
-                pipe.lrange(f"bob:oz:{w}", 0, -1)
-            row_weight = await pipe.execute()
-            zone_price_list.append(row_weight)
-    print('zw = ', zone_weight)
-    print('ZPL', zone_price_list)
-    t.join()
-    amazon_price_list = t.get_result()
-    print('APL=', amazon_price_list)
-    result_rows = []
-    box_init, bubble_init, own_init, amazon_init = 0, 0, 0, 0
-    for r in range(len(rows)):
-        temp_rows = rows[r][:3]
-        box_price = round(sum([Decimal(zone_weight[i]) * Decimal(zone_price_list[r][0][i]) for i in range(len(zone_weight))])/Decimal('100'), 2) if zone_price_list[r][0] else 0
-        bubble_price = round(sum([Decimal(zone_weight[i]) * Decimal(zone_price_list[r][1][i]) for i in range(len(zone_weight))])/Decimal('100'), 2) if zone_price_list[r][1] else 0
-        own_price = round(sum([Decimal(zone_weight[i]) * Decimal(zone_price_list[r][2][i]) for i in range(len(zone_weight))])/Decimal('100'), 2) if zone_price_list[r][2] else 0
-        amazon_price = amazon_price_list[r]
-        if r == 0:
-            box_init, bubble_init, own_init, amazon_init = box_price, bubble_price, own_price, amazon_price
-            temp_rows += [box_price, bubble_price, own_price, amazon_price, 0, 0, 0, 0]
-        else:
-            temp_rows += [box_price, bubble_price, own_price, amazon_price, box_price - box_init, bubble_price - bubble_init, own_price - own_init, amazon_price-amazon_init]
-        result_rows.append(temp_rows)
-    print('result rows = ', result_rows)
-    table_html = ''
-    table_html = '<table class="table"><thead><tr><th>size</th><th>weight</th><th>quantity</th><th>ShipBobBoxPrice</th><th>ShipBobBMPrice</th><th>ShipBobSIOPrice</th><th>AmazonPrice</th><th>BoxPriceDiffer</th><th>BMPriceDiffer</th><th>SIOPricePriceDiffer</th><th>AmazonPricePriceDiffer</th></tr></thead><tbody>{content}</tbody></table>'
-    body_str = ''
-    for r in result_rows:
-        body_str += f'<td>{r[0]}</td><td>{r[1]}</td><td>{r[2]}</td><td>{r[3]}</td><td>{r[4]}</td><td>{r[5]}</td><td>{r[6]}</td><td>{r[-4]}</td><td>{r[-3]}</td><td>{r[-2]}</td><td>{r[-1]}</td></tr>'
-    table_str = table_html.format(content=body_str)
-    return table_str
+    print(body.row_data, body.task_name)
+    standard = body.row_data
+    task_queue = await rdb.lrange(body.task_name, 0, -1)
+    tasks = [eval(d) for d in task_queue]
+    result, quantity_list, og_size_list = list_to_nested_dict(data=tasks)
+    quantity_list.sort()
+    og_size_list.sort()
+    big_map = dict()
+    for obj in standard:
+        size, nums = obj[0], int(obj[1])
+        standard_box_info = result[nums][size]['Box']['Box']
+        standard_bm_info = result[nums][size]['Bubble Mailer']['Bubble Mailer']
+        standard_sio_info = result[nums][size]['Ship in Own']['Ship in Own']
+        standard_az_info = result[1][size]['Amazon']['Amazon']
+        big_map[nums] = []
+        temp_size_list = og_size_list.copy()
+        temp_size_list.remove(size)
+        big_map[nums].append({
+            'og_size': size,
+            'AmazonInfo': f"{standard_az_info['size']} / {standard_az_info['weight']} / ${standard_az_info['price']}",
+            'BoxInfo': f"{standard_box_info['size']} / {standard_box_info['weight']} / ${standard_box_info['price']}",
+            'BMInfo': f"{standard_bm_info['size']} / {standard_bm_info['weight']} / ${standard_bm_info['price']}",
+            'SIOInfo': f"{standard_sio_info['size']} / {standard_sio_info['weight']} / ${standard_sio_info['price']}",
+            'Box Differ': Decimal('0'),
+            'Bubble Mailer Differ': Decimal('0'),
+            'Ship in Own Differ': Decimal('0')})
+        for ts in temp_size_list:
+            item = {
+                'og_size': ts,
+                'AmazonInfo': f"{result[1][ts]['Amazon']['Amazon']['size']} / {result[1][ts]['Amazon']['Amazon']['weight']} / ${result[1][ts]['Amazon']['Amazon']['price']}",
+                'BoxInfo': f"{result[nums][ts]['Box']['Box']['size']} / {result[nums][ts]['Box']['Box']['weight']} / ${result[nums][ts]['Box']['Box']['price']}",
+                'BMInfo': f"{result[nums][ts]['Bubble Mailer']['Bubble Mailer']['size']} / {result[nums][ts]['Bubble Mailer']['Bubble Mailer']['weight']} / ${result[nums][ts]['Bubble Mailer']['Bubble Mailer']['price']}",
+                'SIOInfo': f"{result[nums][ts]['Ship in Own']['Ship in Own']['size']} / {result[nums][ts]['Ship in Own']['Ship in Own']['weight']} / ${result[nums][ts]['Ship in Own']['Ship in Own']['price']}",
+                'Box Differ': result[nums][ts]['Box']['Box']['price'] - standard_box_info['price'],
+                'Bubble Mailer Differ': result[nums][ts]['Bubble Mailer']['Bubble Mailer']['price'] - standard_bm_info[
+                    'price'],
+                'Ship in Own Differ': result[nums][ts]['Ship in Own']['Ship in Own']['price'] - standard_sio_info['price']
+            }
+            big_map[nums].append(item)
+
+    html_list = []
+    for q in quantity_list:
+        tbody_str = ''
+        for obj in big_map[q]:
+            print(obj)
+            size_part = f'<td>{obj["og_size"]}</td>'
+            am = f"<td>{obj['AmazonInfo']}</td>"
+            box = f"<td>{obj['BoxInfo']}</td>"
+            bb = f"<td>{obj['BMInfo']}</td>"
+            sio = f"<td>{obj['SIOInfo']}</td>"
+            bd = f"<td>{obj['Box Differ']}</td>"
+            bmd = f"<td>{obj['Bubble Mailer Differ']}</td>"
+            sd = f"<td>{obj['Ship in Own Differ']}</td>"
+            tbody_str += f'<tr>{size_part}{am}{box}{bb}{sio}{bd}{bmd}{sd}</tr>'
+        html_list.append(f'<div class="panel panel-default" style="margin-top: 8px"><div class="panel-heading"><h4>數量 {q} 區塊</h4></div><div class="panel-body"><table id="taskTable{ q }" class="table table-striped table-bordered"><thead><tr><th>OG-SIZE</th><th>AmazonInfo</th><th>BoxInfo</th><th>BMInfo</th><th>SIOInfo</th><th>Box Differ</th><th>Bubble Mailer Differ</th><th>Ship in Own Differ</th></tr></thead><tbody>{tbody_str}</tbody></table></div></div>')
+    html_str = '\n'.join(html_list)
+    return html_str
 
 
 @common_router.get('/rdb/test')

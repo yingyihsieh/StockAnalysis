@@ -329,7 +329,7 @@ async def ship_price_calculator(body: ShipBody, rdb=Depends(redisClient)):
 
 
 @common_router.get("/detail")
-async def detail(request: Request, key: Optional[str] = Query(default=''), rdb=Depends(redisClient)):
+async def estimator_detail(request: Request, key: Optional[str] = Query(default=''), rdb=Depends(redisClient)):
 
     task_names = await rdb.keys('result*')
     task_names = [name for name in task_names]
@@ -367,7 +367,7 @@ async def detail(request: Request, key: Optional[str] = Query(default=''), rdb=D
 
 
 @common_router.post('/comparator')
-async def ship_price_calculator(body: CompareBody,
+async def ship_price_comparator(body: CompareBody,
                                 rdb=Depends(redisClient)
                                 ):
     print(body.row_data, body.task_name)

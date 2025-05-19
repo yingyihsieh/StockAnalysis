@@ -29,17 +29,7 @@ def tsFormat(ts):
     return pendulum.from_timestamp(ts, tz='Asia/Taipei').format('YYYY/MM/DD')
 
 
-async def demo_requests(url):
-    headers = {
-        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
-    }
-    async with aiohttp.ClientSession() as req:
-        resp = await req.get(url=url, headers=headers)
-        resp_data = await resp.text()
-        from bs4 import BeautifulSoup
-        soup = BeautifulSoup(resp_data, 'html.parser')
-        title = soup.title.string
-    return title
+
 
 
 

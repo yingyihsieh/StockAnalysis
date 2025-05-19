@@ -372,7 +372,10 @@ async def ship_price_comparator(body: CompareBody,
                                 ):
     print(body.row_data, body.task_name)
     standard = body.row_data
-    task_queue = await rdb.lrange(body.task_name, 0, -1)
+    try:
+        task_queue = await rdb.lrange(body.task_name, 0, -1)
+    except:
+        return ''
     tasks = [eval(d) for d in task_queue]
     result, quantity_list, og_size_list = list_to_nested_dict(data=tasks)
     quantity_list.sort()

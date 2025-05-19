@@ -164,7 +164,7 @@
             <div class="row" style="display: none;" id="assignRow">
                 <div class="col-xs-4 form-group">
                         <label for="taskName">任務名稱</label>
-                        <input type="text" id="taskName" name="taskName" class="form-control" required>
+                        <input type="text" id="taskName" name="taskName" placeholder="建議駝峰命名:EricLin" class="form-control" required>
                 </div>
             </div>
             <button class="btn btn-primary" id="assignButton">建立任務</button>
@@ -321,7 +321,10 @@
         var sizeArray = [];
         var checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
         var taskName = document.getElementById('taskName').value;
-
+        if (taskName.includes('+')) {
+            alert('輸入內容不能包含 + 號，請修改。');
+            return;
+        }
         checkboxes.forEach(checkbox => {
             console.log(checkbox.value);
             let result = checkbox.value.split(" x ");
